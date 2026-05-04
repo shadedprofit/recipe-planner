@@ -11,7 +11,8 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
   if (err instanceof Error) {
-    res.status(500).json({ error: err.message });
+    const message = process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message;
+    res.status(500).json({ error: message });
     return;
   }
   res.status(500).json({ error: 'Internal Server Error' });

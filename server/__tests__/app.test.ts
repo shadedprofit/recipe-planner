@@ -86,6 +86,24 @@ describe('errorHandler', () => {
     expect(res.body).toEqual({ error: 'boom' });
   });
 
+  it('sanitizes the error message in production', async () => {
+    const original = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const app = express();
+      app.get('/secret', (_req, _res, next) => {
+        next(new Error('internal db connection string'));
+      });
+      app.use(errorHandler);
+
+      const res = await request(app).get('/secret');
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: 'Internal Server Error' });
+    } finally {
+      process.env.NODE_ENV = original;
+    }
+  });
+
   it('formats non-Error throws as a generic 500', async () => {
     const app = express();
     app.get('/string-throw', (_req, _res, next) => {

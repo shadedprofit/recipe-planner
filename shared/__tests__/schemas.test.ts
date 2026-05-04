@@ -6,6 +6,7 @@ import {
   ExtractIngredientsResponseSchema,
   GenerateRecipesRequestSchema,
   GenerateRecipesResponseSchema,
+  MAX_IMAGE_B64_LEN,
   type Recipe,
 } from '../src/schemas';
 
@@ -123,6 +124,16 @@ describe('ExtractIngredientsRequestSchema', () => {
   it('rejects empty image strings', () => {
     expect(() => ExtractIngredientsRequestSchema.parse({ images: [''] })).toThrow();
   });
+
+  it('rejects an image string exceeding the 5 MB decoded limit', () => {
+    const oversized = 'x'.repeat(MAX_IMAGE_B64_LEN + 1);
+    expect(() => ExtractIngredientsRequestSchema.parse({ images: [oversized] })).toThrow();
+  });
+
+  it('accepts an image string at exactly the 5 MB decoded limit', () => {
+    const atLimit = 'x'.repeat(MAX_IMAGE_B64_LEN);
+    expect(() => ExtractIngredientsRequestSchema.parse({ images: [atLimit] })).not.toThrow();
+  });
 });
 
 describe('ExtractIngredientsResponseSchema', () => {
@@ -181,5 +192,10 @@ describe('GenerateRecipesResponseSchema', () => {
 
   it('accepts exactly 5 recipes', () => {
     expect(() => GenerateRecipesResponseSchema.parse({ recipes: buildN(5) })).not.toThrow();
+  });
+
+  it('rejects 5 recipes with duplicate IDs', () => {
+    const dupes = Array.from({ length: 5 }, () => ({ ...validRecipe, id: 'same-id' }));
+    expect(() => GenerateRecipesResponseSchema.parse({ recipes: dupes })).toThrow();
   });
 });
