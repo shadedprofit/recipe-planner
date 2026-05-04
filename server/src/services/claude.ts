@@ -73,7 +73,11 @@ export async function extractIngredients(images: string[]): Promise<ExtractIngre
     ],
   });
 
-  return parseToolUseInput(response.content, 'extract_ingredients', ExtractIngredientsResponseSchema);
+  return parseToolUseInput(
+    response.content,
+    'extract_ingredients',
+    ExtractIngredientsResponseSchema,
+  );
 }
 
 export async function generateRecipes(

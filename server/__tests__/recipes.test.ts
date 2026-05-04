@@ -47,9 +47,7 @@ describe('POST /api/recipes/generate', () => {
   });
 
   it('returns 400 when ingredients array is empty', async () => {
-    const res = await request(app)
-      .post('/api/recipes/generate')
-      .send({ ingredients: [] });
+    const res = await request(app).post('/api/recipes/generate').send({ ingredients: [] });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation Error');
   });

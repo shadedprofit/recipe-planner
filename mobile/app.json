@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Recipe Planner",
+    "slug": "recipe-planner",
+    "version": "1.0.0",
+    "scheme": "recipe-planner",
+    "orientation": "portrait",
+    "platforms": ["ios", "android"],
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.edgarpabon.recipeplanner"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.edgarpabon.recipeplanner"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to identify ingredients.",
+          "cameraPermission": "The app uses your camera to capture ingredient photos."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

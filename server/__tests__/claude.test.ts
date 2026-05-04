@@ -49,9 +49,7 @@ describe('extractIngredients', () => {
   });
 
   it('passes one image block per image to the API', async () => {
-    mockMessagesCreate.mockResolvedValue(
-      toolUseBlock('extract_ingredients', { ingredients: [] }),
-    );
+    mockMessagesCreate.mockResolvedValue(toolUseBlock('extract_ingredients', { ingredients: [] }));
     await extractIngredients(['a', 'b', 'c']);
 
     const call = mockMessagesCreate.mock.calls[0][0];
@@ -62,9 +60,7 @@ describe('extractIngredients', () => {
   });
 
   it('appends a text block after the image blocks', async () => {
-    mockMessagesCreate.mockResolvedValue(
-      toolUseBlock('extract_ingredients', { ingredients: [] }),
-    );
+    mockMessagesCreate.mockResolvedValue(toolUseBlock('extract_ingredients', { ingredients: [] }));
     await extractIngredients(['a']);
 
     const call = mockMessagesCreate.mock.calls[0][0];
@@ -73,9 +69,7 @@ describe('extractIngredients', () => {
   });
 
   it('forces tool_choice to extract_ingredients', async () => {
-    mockMessagesCreate.mockResolvedValue(
-      toolUseBlock('extract_ingredients', { ingredients: [] }),
-    );
+    mockMessagesCreate.mockResolvedValue(toolUseBlock('extract_ingredients', { ingredients: [] }));
     await extractIngredients(['a']);
 
     const call = mockMessagesCreate.mock.calls[0][0];
