@@ -12,7 +12,7 @@ Smart Recipe Planner is an Expo mobile app plus an Express backend. The intended
 4. User can refresh for five new recipes without repeating previously seen recipe IDs.
 5. User can open a recipe detail screen.
 
-This is a take-home assignment for a Forward Deployed Engineering role at Tenex. The current architecture notes live in `ARCHITECTURE.md`. The historical implementation plan is at `/Users/edgarpabon/.claude/plans/i-am-working-on-frolicking-wreath.md`; treat it as historical context, not ground truth.
+The current architecture notes live in `ARCHITECTURE.md`. The historical implementation plan is at `/Users/edgarpabon/.claude/plans/i-am-working-on-frolicking-wreath.md`; treat it as historical context, not ground truth.
 
 ## Current Implementation Status
 

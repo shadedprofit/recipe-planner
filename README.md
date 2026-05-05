@@ -2,8 +2,6 @@
 
 Take or upload photos of ingredients, extract what is visible with Claude vision, and generate five structured recipes. Refreshing should produce new recipes without repeating IDs already seen in the session.
 
-A take-home assignment for a Forward Deployed Engineering role at Tenex.
-
 ## Current Status
 
 Implemented:

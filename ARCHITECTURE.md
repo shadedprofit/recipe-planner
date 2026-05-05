@@ -6,7 +6,7 @@ Smart Recipe Planner is a three-workspace TypeScript app:
 - `server/`: Express backend that owns all Claude calls.
 - `shared/`: Zod schemas and inferred TypeScript types shared by mobile and server.
 
-The design goal is a small, reviewable take-home project with a real backend, no leaked model keys, structured model output, and tests around the important contracts.
+The design goal is a small, reviewable project with a real backend, no leaked model keys, structured model output, and tests around the important contracts.
 
 ## Current State
 
