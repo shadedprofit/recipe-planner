@@ -37,7 +37,7 @@ Implemented:
 - Server endpoints: `GET /health`, `POST /api/ingredients/extract`,
   `POST /api/recipes/generate`, and `GET /api/recipes/:id`.
 - Configurable ingredient extraction provider, defaulting to Gemini.
-- Claude recipe generation with forced tool-use structured output.
+- Configurable recipe generation provider, defaulting to Gemini.
 - SQLite-backed recipe cache via `better-sqlite3`; generated recipes are stored
   by id and used by the detail endpoint.
 - Demo guide, generated demo ingredient images, and server-only Docker Compose.
@@ -86,7 +86,7 @@ npm run test:coverage -w mobile
 
 ## Recipe Data Source
 
-The current recipe data source is Claude generation cached in SQLite. This is a
+The current recipe data source is model generation cached in SQLite. This is a
 demo/MVP tradeoff: generated recipe ids remain resolvable across sessions
 without committing to a third-party recipe-provider integration yet.
 
@@ -101,8 +101,9 @@ and Claude can shift to ranking, adapting, or rewriting provider results.
   `GEMINI_API_KEY`, and defaults to `gemini-2.5-flash`.
 - Claude generation and fallback extraction belong in
   `server/src/services/claude.ts`.
+- Recipe generation dispatch belongs in `server/src/services/recipeGeneration.ts`.
 - Provider outputs are always validated with shared Zod schemas.
-- Gemini extraction uses structured JSON output.
+- Gemini providers use structured JSON output.
 - Claude structured output uses forced tool-use:
   - `tools: [{ name, input_schema }]`
   - `tool_choice: { type: "tool", name }`
@@ -118,7 +119,10 @@ Server env lives in `server/.env`:
 - `INGREDIENT_EXTRACTION_PROVIDER=gemini` by default.
 - `GEMINI_API_KEY` is required for Gemini ingredient extraction.
 - `GEMINI_INGREDIENT_MODEL` optionally overrides the Gemini extraction model.
-- `ANTHROPIC_API_KEY` is required for Claude recipe generation and Claude
+- `GEMINI_RECIPE_MODEL` optionally overrides the Gemini recipe model.
+- `RECIPE_GENERATION_PROVIDER` defaults to `gemini`; use `claude` only when
+  Anthropic API access is funded.
+- `ANTHROPIC_API_KEY` is required only for Claude recipe generation or Claude
   extraction fallback.
 - `RECIPE_DB_PATH` optionally overrides the SQLite recipe cache path. It
   defaults to `./data/recipes.db`; tests can use `:memory:`.

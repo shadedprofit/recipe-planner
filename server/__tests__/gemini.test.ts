@@ -10,21 +10,37 @@ jest.mock('@google/genai', () => ({
 import { GoogleGenAI } from '@google/genai';
 import {
   DEFAULT_GEMINI_INGREDIENT_MODEL,
+  DEFAULT_GEMINI_RECIPE_MODEL,
   extractIngredientsWithGemini,
+  generateRecipesWithGemini,
 } from '../src/services/gemini';
 
 const MockGoogleGenAI = GoogleGenAI as jest.MockedClass<typeof GoogleGenAI>;
+
+const buildRecipes = (n: number) =>
+  Array.from({ length: n }, (_, i) => ({
+    id: `recipe-${i}`,
+    title: `Recipe ${i}`,
+    description: 'Desc',
+    totalTimeMinutes: 20,
+    servings: 2,
+    ingredients: [{ name: 'egg', quantity: '2', unit: '' }],
+    steps: ['Cook it'],
+    tags: [],
+  }));
 
 beforeEach(() => {
   mockGenerateContent.mockReset();
   MockGoogleGenAI.mockClear();
   process.env.GEMINI_API_KEY = 'test-gemini-key';
   delete process.env.GEMINI_INGREDIENT_MODEL;
+  delete process.env.GEMINI_RECIPE_MODEL;
 });
 
 afterAll(() => {
   delete process.env.GEMINI_API_KEY;
   delete process.env.GEMINI_INGREDIENT_MODEL;
+  delete process.env.GEMINI_RECIPE_MODEL;
 });
 
 describe('extractIngredientsWithGemini', () => {
@@ -104,5 +120,80 @@ describe('extractIngredientsWithGemini', () => {
     mockGenerateContent.mockResolvedValue({ text: 'not-json' });
 
     await expect(extractIngredientsWithGemini(['a'])).rejects.toThrow('malformed');
+  });
+});
+
+describe('generateRecipesWithGemini', () => {
+  it('returns parsed recipes from a valid structured response', async () => {
+    mockGenerateContent.mockResolvedValue({
+      text: JSON.stringify({ recipes: buildRecipes(5) }),
+    });
+
+    const result = await generateRecipesWithGemini(['egg', 'butter'], []);
+
+    expect(result.recipes).toHaveLength(5);
+    expect(MockGoogleGenAI).toHaveBeenCalledWith({ apiKey: 'test-gemini-key' });
+  });
+
+  it('requests JSON output with the shared recipe response shape', async () => {
+    mockGenerateContent.mockResolvedValue({
+      text: JSON.stringify({ recipes: buildRecipes(5) }),
+    });
+
+    await generateRecipesWithGemini(['egg'], []);
+
+    const call = mockGenerateContent.mock.calls[0][0];
+    expect(call.model).toBe(DEFAULT_GEMINI_RECIPE_MODEL);
+    expect(call.config.responseMimeType).toBe('application/json');
+    expect(call.config.responseJsonSchema).toMatchObject({
+      type: 'object',
+      properties: { recipes: expect.any(Object) },
+      required: ['recipes'],
+    });
+    expect(call.config.responseJsonSchema.$schema).toBeUndefined();
+  });
+
+  it('uses GEMINI_RECIPE_MODEL when configured', async () => {
+    process.env.GEMINI_RECIPE_MODEL = 'gemini-recipe-custom';
+    mockGenerateContent.mockResolvedValue({
+      text: JSON.stringify({ recipes: buildRecipes(5) }),
+    });
+
+    await generateRecipesWithGemini(['egg'], []);
+
+    expect(mockGenerateContent.mock.calls[0][0].model).toBe('gemini-recipe-custom');
+  });
+
+  it('interpolates excludeRecipeIds into the user prompt', async () => {
+    mockGenerateContent.mockResolvedValue({
+      text: JSON.stringify({ recipes: buildRecipes(5) }),
+    });
+
+    await generateRecipesWithGemini(['egg'], ['r1', 'r2']);
+
+    const prompt = mockGenerateContent.mock.calls[0][0].contents[0].parts[0].text;
+    expect(prompt).toContain('r1');
+    expect(prompt).toContain('r2');
+  });
+
+  it('throws when GEMINI_API_KEY is not set', async () => {
+    delete process.env.GEMINI_API_KEY;
+
+    await expect(generateRecipesWithGemini(['egg'], [])).rejects.toThrow('GEMINI_API_KEY');
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+
+  it('throws when Gemini returns no text for recipes', async () => {
+    mockGenerateContent.mockResolvedValue({});
+
+    await expect(generateRecipesWithGemini(['egg'], [])).rejects.toThrow('no text');
+  });
+
+  it('wraps malformed recipe data as a plain error', async () => {
+    mockGenerateContent.mockResolvedValue({
+      text: JSON.stringify({ recipes: buildRecipes(3) }),
+    });
+
+    await expect(generateRecipesWithGemini(['egg'], [])).rejects.toThrow('malformed');
   });
 });

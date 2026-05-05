@@ -15,7 +15,8 @@ Implemented:
 - Shared schemas for ingredients, recipes, extraction requests/responses, and generation requests/responses.
 - Server health, ingredient extraction, and recipe generation routes.
 - Configurable ingredient image extraction, defaulting to Gemini with Claude as a fallback provider.
-- Claude tool-use recipe generation and Zod validation of model output.
+- Configurable recipe generation, defaulting to Gemini with Claude as an optional provider.
+- Structured model output and Zod validation for provider responses.
 - Mobile capture screen that can select camera/library images, resize/compress them, and keep base64 data ready for upload.
 - Mobile API client for extraction and generation endpoints.
 - Mobile recipe store that keeps selected images, detected ingredients, generated recipes, and persisted seen recipe IDs.
@@ -32,11 +33,11 @@ Still planned:
 
 ## Recipe Data Source
 
-For the demo / MVP the recipe data source is **Claude generation cached in SQLite**:
+For the demo / MVP the recipe data source is **model generation cached in SQLite**:
 
-- `POST /api/recipes/generate` calls Claude, validates the response, and persists each recipe with `INSERT OR IGNORE` into `server/data/recipes.db`.
+- `POST /api/recipes/generate` calls the configured recipe generation provider, validates the response, and persists each recipe with `INSERT OR IGNORE` into `server/data/recipes.db`.
 - `GET /api/recipes/:id` serves persisted recipes by id, so a recipe id minted in one session remains resolvable later (mobile detail screen, future sharing, etc.).
-- `excludeRecipeIds` is still passed prompt-side to Claude as a soft hint for batch deduplication.
+- `excludeRecipeIds` is still passed prompt-side as a soft hint for batch deduplication.
 
 This is intentionally a "cache the model output, treat it as our dataset" approach. It is fast to ship, requires no third-party data licensing, and avoids fabricating a detail page when the in-memory store is empty. That makes it a good demo/MVP choice, but it is not the long-term product bet.
 
@@ -62,7 +63,7 @@ Current recipe generation flow:
 6. The default Gemini provider sends all image blocks in one structured-output request; the Claude fallback sends all image blocks in one user message and forces the `extract_ingredients` tool.
 7. Server validates the provider response with `ExtractIngredientsResponseSchema`.
 8. Mobile sends ingredient names plus `excludeRecipeIds` to `POST /api/recipes/generate`.
-9. Server forces the `generate_recipes` Claude tool and validates exactly five recipes with unique IDs.
+9. Server calls the configured recipe generation provider and validates exactly five recipes with unique IDs.
 10. Mobile appends returned recipe IDs to persisted `seenRecipeIds`.
 11. Server upserts each generated recipe into the SQLite `recipes` table.
 12. User taps a recipe; detail screen first reads from the in-memory store and, on a miss, fetches `GET /api/recipes/:id` so cold-start navigation still resolves to a real recipe.
@@ -102,7 +103,9 @@ Server and mobile should import contracts from `recipe-planner-shared`, not from
 
 `server/src/services/gemini.ts` is the only file that imports `@google/genai`. It uses `GEMINI_API_KEY`, defaults to `gemini-2.5-flash`, and validates structured JSON output with `ExtractIngredientsResponseSchema`.
 
-`server/src/services/claude.ts` is the only file that imports `@anthropic-ai/sdk`. It remains responsible for recipe generation and also supports the legacy Claude extraction provider.
+`server/src/services/recipeGeneration.ts` selects the recipe generation provider from `RECIPE_GENERATION_PROVIDER`, defaulting to `gemini`.
+
+`server/src/services/claude.ts` is the only file that imports `@anthropic-ai/sdk`. Claude supports optional recipe generation and legacy image extraction when configured.
 
 Claude integration rules:
 
@@ -115,9 +118,11 @@ Claude integration rules:
 Server env:
 
 - `INGREDIENT_EXTRACTION_PROVIDER`: `gemini` by default; `claude` is available as a fallback.
-- `GEMINI_API_KEY`: required when image extraction uses Gemini.
+- `GEMINI_API_KEY`: required when image extraction or recipe generation uses Gemini.
 - `GEMINI_INGREDIENT_MODEL`: optional override for the Gemini extraction model.
-- `ANTHROPIC_API_KEY`: required for recipe generation and for Claude extraction fallback.
+- `GEMINI_RECIPE_MODEL`: optional override for the Gemini recipe model.
+- `RECIPE_GENERATION_PROVIDER`: `gemini` by default; `claude` is available when Anthropic API access is funded.
+- `ANTHROPIC_API_KEY`: required only for Claude recipe generation or Claude extraction fallback.
 - `RECIPE_DB_PATH`: optional override for the SQLite recipe cache path. Defaults to `./data/recipes.db` (created on demand) and accepts `:memory:` for ephemeral runs.
 
 Error handling:
@@ -166,7 +171,7 @@ Each workspace has an 85% global Jest coverage threshold.
 Current coverage focus:
 
 - `shared`: schema invariants.
-- `server`: routes, middleware, provider dispatch, Gemini extraction behavior with mocked Google SDK, and Claude behavior with mocked Anthropic SDK.
+- `server`: routes, middleware, provider dispatch, Gemini extraction/generation behavior with mocked Google SDK, and Claude behavior with mocked Anthropic SDK.
 - `mobile`: design tokens, `useImageSelection`, API client, recipe store, recipe list screen, and recipe detail screen.
 
 Future mobile work should continue to push native-module behavior into hooks so it can be tested without device APIs.

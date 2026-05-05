@@ -3,13 +3,40 @@ import express from 'express';
 import { ZodError } from 'zod';
 import { createApp } from '../src/app';
 import { errorHandler, notFoundHandler } from '../src/middleware/error';
-import { CLAUDE_MODEL } from '../src/routes/health';
+import { DEFAULT_HEALTH_MODEL } from '../src/routes/health';
+import { CLAUDE_MODEL } from '../src/services/claude';
 
 describe('createApp', () => {
   const app = createApp();
 
   describe('GET /health', () => {
-    it('returns ok with the active Claude model id', async () => {
+    beforeEach(() => {
+      delete process.env.GEMINI_RECIPE_MODEL;
+      delete process.env.RECIPE_GENERATION_PROVIDER;
+    });
+
+    afterAll(() => {
+      delete process.env.GEMINI_RECIPE_MODEL;
+      delete process.env.RECIPE_GENERATION_PROVIDER;
+    });
+
+    it('returns ok with the active default recipe model id', async () => {
+      const res = await request(app).get('/health');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ ok: true, model: DEFAULT_HEALTH_MODEL });
+    });
+
+    it('returns ok with a configured Gemini recipe model id', async () => {
+      process.env.GEMINI_RECIPE_MODEL = 'gemini-custom';
+
+      const res = await request(app).get('/health');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ ok: true, model: 'gemini-custom' });
+    });
+
+    it('returns ok with the Claude model id when Claude generation is configured', async () => {
+      process.env.RECIPE_GENERATION_PROVIDER = 'claude';
+
       const res = await request(app).get('/health');
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true, model: CLAUDE_MODEL });

@@ -10,7 +10,7 @@ Implemented:
 - Shared Zod schemas for ingredients, recipe data, request/response payloads, image size limits, and unique recipe IDs.
 - Express backend with health, ingredient extraction, and recipe generation endpoints.
 - Configurable ingredient image extraction, defaulting to Gemini with Claude as a fallback provider.
-- Anthropic Claude recipe generation with forced tool-use structured output.
+- Configurable recipe generation, defaulting to Gemini with Claude as an optional provider.
 - Expo Router mobile scaffold with a capture screen for camera/library image selection, thumbnail removal, resizing, and base64 conversion.
 - Mobile API client for extraction/generation requests.
 - Mobile recipe store for selected images, detected ingredients, generated recipes, and seen recipe IDs. Only seen recipe IDs are persisted to AsyncStorage.
@@ -29,7 +29,7 @@ Not implemented yet:
 
 - **Mobile**: Expo SDK 52, TypeScript, Expo Router, React Native, `expo-image-picker`, `expo-image-manipulator`
 - **Mobile state**: Zustand + AsyncStorage for seen recipe history, TanStack Query for request orchestration
-- **Backend**: Node + Express (TypeScript), Gemini image extraction by default, Anthropic Claude Sonnet 4.6 recipe generation, structured model output, SQLite recipe cache via `better-sqlite3`
+- **Backend**: Node + Express (TypeScript), Gemini image extraction and recipe generation by default, optional Claude fallback providers, structured model output, SQLite recipe cache via `better-sqlite3`
 - **Shared**: Zod schemas consumed by both apps
 - **Planned hosting**: Railway backend and Expo Go mobile demo
 
@@ -78,7 +78,7 @@ npm run demo:server
 
 Each workspace owns its own env config:
 
-- `server/.env` — `INGREDIENT_EXTRACTION_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_INGREDIENT_MODEL`, `ANTHROPIC_API_KEY`, `PORT`, optional `RECIPE_DB_PATH` (gitignored; `.env.example` committed)
+- `server/.env` — `INGREDIENT_EXTRACTION_PROVIDER`, `RECIPE_GENERATION_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_INGREDIENT_MODEL`, `GEMINI_RECIPE_MODEL`, optional `ANTHROPIC_API_KEY`, `PORT`, optional `RECIPE_DB_PATH` (gitignored; `.env.example` committed)
 - `mobile/.env.local` — `EXPO_PUBLIC_API_URL` (gitignored; `.env.example` committed)
 
 `EXPO_PUBLIC_*` vars are bundled into the mobile JS — secrets stay server-side.
@@ -86,9 +86,11 @@ Each workspace owns its own env config:
 Server-side model keys stay in `server/.env`:
 
 - `INGREDIENT_EXTRACTION_PROVIDER=gemini` uses Gemini for image extraction.
-- `GEMINI_API_KEY` is required for Gemini extraction.
+- `RECIPE_GENERATION_PROVIDER=gemini` uses Gemini for recipe generation.
+- `GEMINI_API_KEY` is required for Gemini extraction and Gemini recipe generation.
 - `GEMINI_INGREDIENT_MODEL` optionally overrides the default `gemini-2.5-flash` extraction model.
-- `ANTHROPIC_API_KEY` is required for Claude recipe generation and for extraction when `INGREDIENT_EXTRACTION_PROVIDER=claude`.
+- `GEMINI_RECIPE_MODEL` optionally overrides the default `gemini-2.5-flash` recipe model.
+- `ANTHROPIC_API_KEY` is only required when `RECIPE_GENERATION_PROVIDER=claude` or `INGREDIENT_EXTRACTION_PROVIDER=claude`.
 
 `EXPO_PUBLIC_API_URL` must be reachable from the mobile runtime:
 
@@ -103,9 +105,9 @@ Server-side model keys stay in `server/.env`:
 - `POST /api/recipes/generate` accepts `{ ingredients: string[]; excludeRecipeIds?: string[] }` and returns exactly five recipes. Each generated recipe is upserted into the SQLite recipe cache.
 - `GET /api/recipes/:id` returns `{ recipe }` from the cache, or 404 when the id is unknown.
 
-The backend validates request and model output with shared Zod schemas. Gemini extraction uses structured JSON output; Claude recipe generation uses forced tool-use blocks rather than free-text JSON.
+The backend validates request and model output with shared Zod schemas. Gemini providers use structured JSON output; Claude providers use forced tool-use blocks rather than free-text JSON.
 
-For demo/MVP purposes, the recipe data source is Claude generation cached in SQLite: the app treats generated recipe payloads as a local cache keyed by recipe id so detail screens and future share links can resolve without inventing content. This is a deliberate demo tradeoff, not the intended long-term source of truth. If this project continues past the demo, the planned next step is to commit to a real recipe provider API (for example Spoonacular or Edamam) as the canonical source and demote the LLM to a ranker/adapter. See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
+For demo/MVP purposes, the recipe data source is model generation cached in SQLite: the app treats generated recipe payloads as a local cache keyed by recipe id so detail screens and future share links can resolve without inventing content. This is a deliberate demo tradeoff, not the intended long-term source of truth. If this project continues past the demo, the planned next step is to commit to a real recipe provider API (for example Spoonacular or Edamam) as the canonical source and demote the LLM to a ranker/adapter. See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 
 ## Development Workflow
 

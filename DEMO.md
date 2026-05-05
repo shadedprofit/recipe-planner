@@ -15,8 +15,7 @@ networking friction of trying to run a native Expo client inside Docker.
 
 - Node 22 or newer.
 - Expo-compatible mobile environment.
-- `GEMINI_API_KEY` for ingredient extraction.
-- `ANTHROPIC_API_KEY` for recipe generation.
+- `GEMINI_API_KEY` for ingredient extraction and recipe generation.
 
 ## Demo Assets
 
@@ -51,10 +50,11 @@ Create `server/.env` from `server/.env.example` and fill in real keys:
 cp server/.env.example server/.env
 ```
 
-Replace the placeholder values such as `GEMINI_API_KEY=...` and
-`ANTHROPIC_API_KEY=sk-ant-...` before running the demo. Keep `server/.env` as
-plain `KEY=value` lines; avoid inline `#` comments on values because Docker
-Compose env-file parsing can differ from shell dotenv parsing.
+Replace the placeholder `GEMINI_API_KEY=...` value before running the demo.
+`ANTHROPIC_API_KEY` can stay commented out unless you explicitly switch a
+provider to Claude. Keep `server/.env` as plain `KEY=value` lines; avoid inline
+`#` comments on values because Docker Compose env-file parsing can differ from
+shell dotenv parsing.
 
 Then start the backend:
 
@@ -115,7 +115,7 @@ npm run start -w mobile
 
 ## Current Limitations
 
-- The demo depends on live Gemini and Anthropic API calls.
+- The default demo depends on live Gemini API calls.
 - Recipe generation is cached model output for the demo, not a permanent recipe
   provider database.
 - Docker Compose starts the backend only. A full one-command browser demo would

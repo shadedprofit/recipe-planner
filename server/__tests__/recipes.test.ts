@@ -1,15 +1,15 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
-import * as claudeService from '../src/services/claude';
+import * as recipeGeneration from '../src/services/recipeGeneration';
 import * as recipeStore from '../src/services/recipeStore';
 import type { Recipe } from 'recipe-planner-shared';
 
-jest.mock('../src/services/claude');
+jest.mock('../src/services/recipeGeneration');
 jest.mock('../src/services/recipeStore');
 
 const app = createApp();
-const mockGenerate = claudeService.generateRecipes as jest.MockedFunction<
-  typeof claudeService.generateRecipes
+const mockGenerate = recipeGeneration.generateRecipes as jest.MockedFunction<
+  typeof recipeGeneration.generateRecipes
 >;
 const mockSaveRecipes = recipeStore.saveRecipes as jest.MockedFunction<
   typeof recipeStore.saveRecipes
@@ -73,7 +73,7 @@ describe('POST /api/recipes/generate', () => {
     expect(res.status).toBe(400);
   });
 
-  it('returns 500 when the Claude service throws and does not persist', async () => {
+  it('returns 500 when the recipe generation service throws and does not persist', async () => {
     mockGenerate.mockRejectedValue(new Error('model error'));
     const res = await request(app)
       .post('/api/recipes/generate')

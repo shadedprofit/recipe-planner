@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { GenerateRecipesRequestSchema } from 'recipe-planner-shared';
-import { generateRecipes } from '../services/claude';
+import { generateRecipes } from '../services/recipeGeneration';
 import { getRecipeById, saveRecipes } from '../services/recipeStore';
 
 export const recipesRouter: Router = Router();
