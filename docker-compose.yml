@@ -1,0 +1,30 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      INGREDIENT_EXTRACTION_PROVIDER: ${INGREDIENT_EXTRACTION_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_INGREDIENT_MODEL: ${GEMINI_INGREDIENT_MODEL:-gemini-2.5-flash}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      PORT: ${PORT:-3001}
+      RECIPE_DB_PATH: /data/recipes.db
+    ports:
+      - '${PORT:-3001}:${PORT:-3001}'
+    volumes:
+      - recipe-planner-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://127.0.0.1:'' + (process.env.PORT || ''3001'') + ''/health'').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"',
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  recipe-planner-data:

@@ -40,11 +40,12 @@ Implemented:
 - Configurable ingredient extraction provider, defaulting to Gemini.
 - Claude recipe generation with forced tool-use structured output.
 - SQLite-backed recipe cache via `better-sqlite3`.
+- Demo guide, generated demo ingredient images, and server-only Docker Compose.
 - Expo Router capture, recipe list, and recipe detail flows.
 - Mobile recipe detail falls back to server fetch by id on cold start.
 - Husky hooks: `pre-commit` runs lint, and `pre-push` runs unit tests.
 
-Still planned: CI, Docker, and Railway deployment.
+Still planned: CI, full mobile/web Docker demo, and Railway deployment.
 
 ## Commands
 

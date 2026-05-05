@@ -23,11 +23,12 @@ Implemented:
 - Mobile recipe detail screen that reads the selected recipe from the store, falls back to fetching it from the server by id, and renders title, description, time, servings, tags, ingredients, and steps. Shows loading, error, and unavailable states.
 - Server-side SQLite recipe persistence: every generated recipe is upserted into a `recipes` table keyed by id, so recipe ids stay resolvable across sessions and devices.
 - `GET /api/recipes/:id` endpoint that reads from the SQLite store.
+- Server-only Docker Compose demo setup and generated demo ingredient images.
 - Husky hooks: `pre-commit` runs lint, and `pre-push` runs unit tests across all workspaces before pushing.
 
 Still planned:
 
-- CI, Docker, and deployment.
+- CI, full mobile/web Docker demo, and deployment.
 
 ## Recipe Data Source
 

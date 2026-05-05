@@ -17,12 +17,13 @@ Implemented:
 - Recipe list screen that extracts ingredients from selected photos, generates recipes, refreshes with dedup support, and links to recipe details.
 - Recipe detail screen that renders the selected recipe (title, description, time, servings, tags, ingredients, steps), falls back to fetching by id from the server on cold start, and renders explicit loading/error/unavailable states.
 - SQLite-backed recipe cache (`better-sqlite3`) so generated recipe ids resolve across sessions via `GET /api/recipes/:id`.
+- Demo guide, generated demo ingredient images, and server-only Docker Compose setup.
 - Husky hooks: `pre-commit` runs lint, and `pre-push` runs all workspace unit tests before a push.
 - Unit tests and coverage gates for implemented server, shared, mobile hook, API client, store, and recipe screen behavior.
 
 Not implemented yet:
 
-- CI, Docker, and Railway deployment wiring.
+- CI, full mobile/web Docker demo, and Railway deployment wiring.
 
 ## Stack
 
@@ -41,6 +42,7 @@ shared/   Zod schemas + types
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the current design rationale, API contract, and implementation status.
+See [DEMO.md](DEMO.md) for a local demo walkthrough with generated sample images and Docker backend startup.
 
 ## AI Agent Docs
 
@@ -69,6 +71,7 @@ Run a workspace command with `-w`, for example:
 ```bash
 npm run dev -w server
 npm run start -w mobile
+npm run demo:server
 ```
 
 ## Environment Files

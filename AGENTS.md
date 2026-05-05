@@ -40,11 +40,12 @@ Implemented:
 - Claude recipe generation with forced tool-use structured output.
 - SQLite-backed recipe cache via `better-sqlite3`; generated recipes are stored
   by id and used by the detail endpoint.
+- Demo guide, generated demo ingredient images, and server-only Docker Compose.
 - Expo Router mobile capture, recipe list, and recipe detail flows.
 - Zustand mobile recipe store; only `seenRecipeIds` persists to AsyncStorage.
 - Husky hooks: `pre-commit` runs lint, and `pre-push` runs unit tests.
 
-Still planned: CI, Docker, and Railway deployment.
+Still planned: CI, full mobile/web Docker demo, and Railway deployment.
 
 ## Commands
 
