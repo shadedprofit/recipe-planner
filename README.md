@@ -92,6 +92,10 @@ Server-side model keys stay in `server/.env`:
 - `GEMINI_RECIPE_MODEL` optionally overrides the default `gemini-2.5-flash` recipe model.
 - `ANTHROPIC_API_KEY` is only required when `RECIPE_GENERATION_PROVIDER=claude` or `INGREDIENT_EXTRACTION_PROVIDER=claude`.
 
+The server entrypoint loads `server/.env` automatically for local
+`npm run dev -w server` and `npm run start -w server` runs. Docker Compose also
+reads the same file through `npm run demo:server`.
+
 `EXPO_PUBLIC_API_URL` must be reachable from the mobile runtime:
 
 - iOS simulator: `http://localhost:3001`

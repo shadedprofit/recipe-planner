@@ -83,6 +83,8 @@ npm install
 npm run dev -w server
 ```
 
+The server loads `server/.env` automatically in this mode.
+
 ## Mobile App
 
 Create `mobile/.env.local` from `mobile/.env.example`:
