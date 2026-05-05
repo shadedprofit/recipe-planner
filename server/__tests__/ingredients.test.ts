@@ -1,12 +1,12 @@
 import request from 'supertest';
 import { createApp } from '../src/app';
-import * as claudeService from '../src/services/claude';
+import * as ingredientExtractionService from '../src/services/ingredientExtraction';
 
-jest.mock('../src/services/claude');
+jest.mock('../src/services/ingredientExtraction');
 
 const app = createApp();
-const mockExtract = claudeService.extractIngredients as jest.MockedFunction<
-  typeof claudeService.extractIngredients
+const mockExtract = ingredientExtractionService.extractIngredients as jest.MockedFunction<
+  typeof ingredientExtractionService.extractIngredients
 >;
 
 beforeEach(() => mockExtract.mockReset());
@@ -58,7 +58,7 @@ describe('POST /api/ingredients/extract', () => {
     expect(res.status).toBe(400);
   });
 
-  it('returns 500 when the Claude service throws', async () => {
+  it('returns 500 when the extraction service throws', async () => {
     mockExtract.mockRejectedValue(new Error('API unavailable'));
     const res = await request(app)
       .post('/api/ingredients/extract')
@@ -67,7 +67,7 @@ describe('POST /api/ingredients/extract', () => {
     expect(res.body.error).toBe('API unavailable');
   });
 
-  it('returns an empty ingredients list when Claude finds nothing', async () => {
+  it('returns an empty ingredients list when no ingredients are found', async () => {
     mockExtract.mockResolvedValue({ ingredients: [] });
     const res = await request(app)
       .post('/api/ingredients/extract')

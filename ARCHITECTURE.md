@@ -3,7 +3,7 @@
 Smart Recipe Planner is a three-workspace TypeScript app:
 
 - `mobile/`: Expo mobile client.
-- `server/`: Express backend that owns all Claude calls.
+- `server/`: Express backend that owns all model-provider calls.
 - `shared/`: Zod schemas and inferred TypeScript types shared by mobile and server.
 
 The design goal is a small, reviewable project with a real backend, no leaked model keys, structured model output, and tests around the important contracts.
@@ -14,7 +14,8 @@ Implemented:
 
 - Shared schemas for ingredients, recipes, extraction requests/responses, and generation requests/responses.
 - Server health, ingredient extraction, and recipe generation routes.
-- Claude tool-use integration and Zod validation of model output.
+- Configurable ingredient image extraction, defaulting to Gemini with Claude as a fallback provider.
+- Claude tool-use recipe generation and Zod validation of model output.
 - Mobile capture screen that can select camera/library images, resize/compress them, and keep base64 data ready for upload.
 - Mobile API client for extraction and generation endpoints.
 - Mobile recipe store that keeps selected images, detected ingredients, generated recipes, and persisted seen recipe IDs.
@@ -33,12 +34,13 @@ Current recipe generation flow:
 2. `useImageSelection` resizes each image to width 1024, compresses JPEG output at `0.7`, and stores `{ uri, base64 }` in component state.
 3. Mobile sends base64 JPEG strings to `POST /api/ingredients/extract`.
 4. Server validates payloads with `ExtractIngredientsRequestSchema`.
-5. Server sends all image blocks in one Claude message and forces the `extract_ingredients` tool.
-6. Server validates the tool input with `ExtractIngredientsResponseSchema`.
-7. Mobile sends ingredient names plus `excludeRecipeIds` to `POST /api/recipes/generate`.
-8. Server forces the `generate_recipes` tool and validates exactly five recipes with unique IDs.
-9. Mobile appends returned recipe IDs to persisted `seenRecipeIds`.
-10. User taps a recipe; detail screen reads the recipe from the store by `id` and renders the full details.
+5. Server dispatches image extraction through `server/src/services/ingredientExtraction.ts`.
+6. The default Gemini provider sends all image blocks in one structured-output request; the Claude fallback sends all image blocks in one user message and forces the `extract_ingredients` tool.
+7. Server validates the provider response with `ExtractIngredientsResponseSchema`.
+8. Mobile sends ingredient names plus `excludeRecipeIds` to `POST /api/recipes/generate`.
+9. Server forces the `generate_recipes` Claude tool and validates exactly five recipes with unique IDs.
+10. Mobile appends returned recipe IDs to persisted `seenRecipeIds`.
+11. User taps a recipe; detail screen reads the recipe from the store by `id` and renders the full details.
 
 Recipes are kept in memory only for the active session; if the session is cleared, the detail screen shows an unavailable state instead of fabricating data.
 
@@ -66,15 +68,26 @@ Server and mobile should import contracts from `recipe-planner-shared`, not from
 - `POST /api/ingredients/extract`
 - `POST /api/recipes/generate`
 
-`server/src/services/claude.ts` is the only file that imports `@anthropic-ai/sdk`.
+`server/src/services/ingredientExtraction.ts` selects the image extraction provider from `INGREDIENT_EXTRACTION_PROVIDER`, defaulting to `gemini`.
+
+`server/src/services/gemini.ts` is the only file that imports `@google/genai`. It uses `GEMINI_API_KEY`, defaults to `gemini-2.5-flash`, and validates structured JSON output with `ExtractIngredientsResponseSchema`.
+
+`server/src/services/claude.ts` is the only file that imports `@anthropic-ai/sdk`. It remains responsible for recipe generation and also supports the legacy Claude extraction provider.
 
 Claude integration rules:
 
-- Use forced tool-use for structured output.
+- Use forced tool-use for Claude structured output.
 - Convert Zod schemas to JSON Schema with `zod-to-json-schema`.
 - Parse `tool_use.input` and validate with Zod.
 - Do not parse model free text as JSON.
 - Keep API keys server-side only.
+
+Server env:
+
+- `INGREDIENT_EXTRACTION_PROVIDER`: `gemini` by default; `claude` is available as a fallback.
+- `GEMINI_API_KEY`: required when image extraction uses Gemini.
+- `GEMINI_INGREDIENT_MODEL`: optional override for the Gemini extraction model.
+- `ANTHROPIC_API_KEY`: required for recipe generation and for Claude extraction fallback.
 
 Error handling:
 
@@ -122,7 +135,7 @@ Each workspace has an 85% global Jest coverage threshold.
 Current coverage focus:
 
 - `shared`: schema invariants.
-- `server`: routes, middleware, Claude service behavior with mocked Anthropic SDK.
+- `server`: routes, middleware, provider dispatch, Gemini extraction behavior with mocked Google SDK, and Claude behavior with mocked Anthropic SDK.
 - `mobile`: design tokens, `useImageSelection`, API client, recipe store, recipe list screen, and recipe detail screen.
 
 Future mobile work should continue to push native-module behavior into hooks so it can be tested without device APIs.

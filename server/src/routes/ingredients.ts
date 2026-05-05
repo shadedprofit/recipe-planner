@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ExtractIngredientsRequestSchema } from 'recipe-planner-shared';
-import { extractIngredients } from '../services/claude';
+import { extractIngredients } from '../services/ingredientExtraction';
 
 export const ingredientsRouter: Router = Router();
 

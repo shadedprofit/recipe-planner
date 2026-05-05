@@ -10,7 +10,7 @@ Smart Recipe Planner is an Expo mobile app plus an Express backend. The product
 flow is:
 
 1. User takes or uploads one or more ingredient photos.
-2. Backend extracts visible ingredients with Anthropic Claude vision.
+2. Backend extracts visible ingredients with a configurable vision provider.
 3. Backend generates exactly five structured recipes.
 4. User can refresh for five new recipes while sending previously seen recipe
    IDs as exclusions.
@@ -20,8 +20,8 @@ Current architecture notes live in `ARCHITECTURE.md`. `README.md` is the
 developer quick-start. `CLAUDE.md` remains useful context for Claude Code, but
 Codex should prefer this file plus the tracked project docs.
 
-The historical handoff file `codex-handoff.md` may exist locally and is not
-authoritative. Do not commit it unless explicitly asked.
+The historical handoff file `codex-handoff.md` may exist locally, is ignored by
+git, and is not authoritative. Do not commit it unless explicitly asked.
 
 ## Current Implementation Status
 
@@ -33,7 +33,8 @@ Implemented:
   - `GET /health`
   - `POST /api/ingredients/extract`
   - `POST /api/recipes/generate`
-- Anthropic Claude integration in `server/src/services/claude.ts`.
+- Configurable ingredient extraction provider in `server/src/services/ingredientExtraction.ts`, defaulting to Gemini.
+- Anthropic Claude recipe generation in `server/src/services/claude.ts`.
 - Expo Router mobile routes for capture, recipe list, and recipe detail.
 - Capture screen with camera/library selection, thumbnail grid, image removal,
   resize/compress/base64 conversion, loading state, and user-facing errors.
@@ -86,28 +87,42 @@ npm run test:coverage -w mobile
   resolution.
 - Keep model API keys server-side only.
 - Do not rename files or symbols just to replace "Claude" branding; Claude is
-  the model provider and `server/src/services/claude.ts` is intentionally named.
+  one model provider and `server/src/services/claude.ts` is intentionally named.
 
-## Anthropic Integration
+## Model Provider Integration
 
-All Anthropic SDK usage belongs in `server/src/services/claude.ts`.
+Ingredient image extraction is selected by `INGREDIENT_EXTRACTION_PROVIDER`:
+
+- `gemini` is the default and uses `server/src/services/gemini.ts`.
+- `claude` uses the fallback extraction path in `server/src/services/claude.ts`.
+
+All Google GenAI SDK usage belongs in `server/src/services/gemini.ts`. Gemini extraction requires `GEMINI_API_KEY` and defaults to `gemini-2.5-flash`; `GEMINI_INGREDIENT_MODEL` can override that model.
+
+All Anthropic SDK usage belongs in `server/src/services/claude.ts`. Claude remains responsible for recipe generation and for the optional Claude extraction fallback.
 
 Patterns to preserve:
 
-- Vision calls send one user message containing N base64 JPEG image blocks plus
+- Provider outputs are always validated with shared Zod schemas.
+- Gemini extraction uses structured JSON output, not free-text JSON.
+- Claude vision calls send one user message containing N base64 JPEG image blocks plus
   one trailing text block.
-- Structured output uses forced tool-use:
+- Claude structured output uses forced tool-use:
   - `tools: [{ name, input_schema }]`
   - `tool_choice: { type: "tool", name }`
   - parse the returned `tool_use.input`
   - validate with the shared Zod schema
 - Never parse free-text JSON from model output.
-- Unit tests mock `@anthropic-ai/sdk` at the module level.
+- Unit tests mock `@google/genai` and `@anthropic-ai/sdk` at the module level.
 
 ## API Contracts
 
-Server env lives in `server/.env`. `ANTHROPIC_API_KEY` is required for Claude
-calls, and `PORT` is optional.
+Server env lives in `server/.env`:
+
+- `INGREDIENT_EXTRACTION_PROVIDER=gemini` by default.
+- `GEMINI_API_KEY` is required for Gemini ingredient extraction.
+- `GEMINI_INGREDIENT_MODEL` optionally overrides the default Gemini extraction model.
+- `ANTHROPIC_API_KEY` is required for Claude recipe generation and for extraction when `INGREDIENT_EXTRACTION_PROVIDER=claude`.
+- `PORT` is optional.
 
 Mobile API calls require `EXPO_PUBLIC_API_URL` in `mobile/.env.local`. Do not
 rely on `localhost` for physical-device Expo testing; use a LAN-reachable URL.
@@ -203,4 +218,4 @@ For every feature change, bug fix, or docs change intended for push:
    and only then push.
 
 When committing, do not include unrelated local files. In particular, leave
-`codex-handoff.md` untracked unless the user explicitly asks to commit it.
+`codex-handoff.md` ignored unless the user explicitly asks to commit it.

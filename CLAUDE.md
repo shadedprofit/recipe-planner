@@ -7,9 +7,9 @@ This file provides guidance to AI coding agents working in this repository. It w
 Smart Recipe Planner is an Expo mobile app plus an Express backend. The intended product flow is:
 
 1. User takes or uploads one or more ingredient photos.
-2. Backend extracts visible ingredients with Anthropic Claude vision.
+2. Backend extracts visible ingredients with a configurable vision provider.
 3. Backend generates exactly five structured recipes.
-4. User can refresh for five new recipes without repeating previously seen recipe IDs.
+4. User can refresh for five new recipes while sending previously seen recipe IDs as exclusions.
 5. User can open a recipe detail screen.
 
 The current architecture notes live in `ARCHITECTURE.md`. The historical implementation plan is at `/Users/edgarpabon/.claude/plans/i-am-working-on-frolicking-wreath.md`; treat it as historical context, not ground truth.
@@ -24,7 +24,8 @@ Implemented:
   - `GET /health`
   - `POST /api/ingredients/extract`
   - `POST /api/recipes/generate`
-- Claude service integration in `server/src/services/claude.ts`.
+- Configurable ingredient extraction provider in `server/src/services/ingredientExtraction.ts`, defaulting to Gemini.
+- Claude recipe generation integration in `server/src/services/claude.ts`.
 - Expo Router mobile scaffold with capture, recipe list, and recipe detail routes.
 - Capture screen with camera/library selection, thumbnail grid, image removal, resize/compress/base64 conversion, loading state, and user-facing error messages.
 - Mobile API client in `mobile/src/api/client.ts`.
@@ -69,22 +70,38 @@ npm run test:coverage -w mobile
 
 Do not introduce cross-workspace path aliases. Import shared contracts by package name (`recipe-planner-shared`) so npm workspace symlinks handle resolution.
 
-## Anthropic Integration
+## Model Provider Integration
 
-All Anthropic SDK usage belongs in `server/src/services/claude.ts`.
+Ingredient image extraction is selected by `INGREDIENT_EXTRACTION_PROVIDER`:
+
+- `gemini` is the default and uses `server/src/services/gemini.ts`.
+- `claude` uses the fallback extraction path in `server/src/services/claude.ts`.
+
+All Google GenAI SDK usage belongs in `server/src/services/gemini.ts`. Gemini extraction requires `GEMINI_API_KEY` and defaults to `gemini-2.5-flash`; `GEMINI_INGREDIENT_MODEL` can override that model.
+
+All Anthropic SDK usage belongs in `server/src/services/claude.ts`. Claude remains responsible for recipe generation and for the optional Claude extraction fallback.
 
 Patterns to preserve:
 
-- Vision calls send one user message containing N base64 JPEG image blocks plus one trailing text block.
-- Structured output uses forced tool-use:
+- Provider outputs are always validated with shared Zod schemas.
+- Gemini extraction uses structured JSON output, not free-text JSON.
+- Claude vision calls send one user message containing N base64 JPEG image blocks plus one trailing text block.
+- Claude structured output uses forced tool-use:
   - `tools: [{ name, input_schema }]`
   - `tool_choice: { type: "tool", name }`
   - parse the returned `tool_use.input`
   - validate with the shared Zod schema
 - Never parse free-text JSON from model output.
-- Unit tests mock `@anthropic-ai/sdk` at the module level.
+- Unit tests mock `@google/genai` and `@anthropic-ai/sdk` at the module level.
 
 ## API Contracts
+
+Server API calls require model-provider keys in `server/.env`:
+
+- `INGREDIENT_EXTRACTION_PROVIDER=gemini` by default.
+- `GEMINI_API_KEY` is required for Gemini ingredient extraction.
+- `GEMINI_INGREDIENT_MODEL` optionally overrides the default Gemini extraction model.
+- `ANTHROPIC_API_KEY` is required for Claude recipe generation and for extraction when `INGREDIENT_EXTRACTION_PROVIDER=claude`.
 
 Mobile API calls require `EXPO_PUBLIC_API_URL` in `mobile/.env.local`. Do not rely on `localhost` for physical-device Expo testing; use a LAN-reachable URL.
 
@@ -153,4 +170,4 @@ For every feature change or bug fix:
 4. Have a separate agent review code, tests, and docs impact before pushing.
 5. Fix review findings, rerun verification, amend if the commit is still local, and only then push.
 
-The only current untracked local handoff artifact is `codex-handoff.md`. It is useful context but stale in places; do not treat it as authoritative.
+The local handoff artifact `codex-handoff.md` is ignored by git. It can be useful context but is stale in places; do not treat it as authoritative.

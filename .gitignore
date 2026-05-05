@@ -44,3 +44,4 @@ coverage/
 # Misc
 .cache/
 *.tgz
+codex-handoff.md

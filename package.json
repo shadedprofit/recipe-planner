@@ -2,7 +2,7 @@
   "name": "recipe-planner",
   "version": "0.1.0",
   "private": true,
-  "description": "Smart recipe planner: photo of ingredients to 5 structured recipes via Claude.",
+  "description": "Smart recipe planner: ingredient photos to 5 structured recipes via multimodal AI.",
   "workspaces": [
     "mobile",
     "server",

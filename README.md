@@ -1,6 +1,6 @@
 # Smart Recipe Planner
 
-Take or upload photos of ingredients, extract what is visible with Claude vision, and generate five structured recipes. Refreshing should produce new recipes without repeating IDs already seen in the session.
+Take or upload photos of ingredients, extract what is visible with a configurable vision model, and generate five structured recipes. Refreshing sends previously seen recipe IDs as exclusions.
 
 ## Current Status
 
@@ -9,7 +9,8 @@ Implemented:
 - Monorepo scaffold with `mobile`, `server`, and `shared` npm workspaces.
 - Shared Zod schemas for ingredients, recipe data, request/response payloads, image size limits, and unique recipe IDs.
 - Express backend with health, ingredient extraction, and recipe generation endpoints.
-- Anthropic Claude integration with forced tool-use structured output.
+- Configurable ingredient image extraction, defaulting to Gemini with Claude as a fallback provider.
+- Anthropic Claude recipe generation with forced tool-use structured output.
 - Expo Router mobile scaffold with a capture screen for camera/library image selection, thumbnail removal, resizing, and base64 conversion.
 - Mobile API client for extraction/generation requests.
 - Mobile recipe store for selected images, detected ingredients, generated recipes, and seen recipe IDs. Only seen recipe IDs are persisted to AsyncStorage.
@@ -25,7 +26,7 @@ Not implemented yet:
 
 - **Mobile**: Expo SDK 52, TypeScript, Expo Router, React Native, `expo-image-picker`, `expo-image-manipulator`
 - **Mobile state**: Zustand + AsyncStorage for seen recipe history, TanStack Query for request orchestration
-- **Backend**: Node + Express (TypeScript), Anthropic Claude Sonnet 4.6, structured output via tool-use
+- **Backend**: Node + Express (TypeScript), Gemini image extraction by default, Anthropic Claude Sonnet 4.6 recipe generation, structured model output
 - **Shared**: Zod schemas consumed by both apps
 - **Planned hosting**: Railway backend and Expo Go mobile demo
 
@@ -63,10 +64,17 @@ npm run start -w mobile
 
 Each workspace owns its own env config:
 
-- `server/.env` — `ANTHROPIC_API_KEY`, `PORT` (gitignored; `.env.example` committed)
+- `server/.env` — `INGREDIENT_EXTRACTION_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_INGREDIENT_MODEL`, `ANTHROPIC_API_KEY`, `PORT` (gitignored; `.env.example` committed)
 - `mobile/.env.local` — `EXPO_PUBLIC_API_URL` (gitignored; `.env.example` committed)
 
 `EXPO_PUBLIC_*` vars are bundled into the mobile JS — secrets stay server-side.
+
+Server-side model keys stay in `server/.env`:
+
+- `INGREDIENT_EXTRACTION_PROVIDER=gemini` uses Gemini for image extraction.
+- `GEMINI_API_KEY` is required for Gemini extraction.
+- `GEMINI_INGREDIENT_MODEL` optionally overrides the default `gemini-2.5-flash` extraction model.
+- `ANTHROPIC_API_KEY` is required for Claude recipe generation and for extraction when `INGREDIENT_EXTRACTION_PROVIDER=claude`.
 
 `EXPO_PUBLIC_API_URL` must be reachable from the mobile runtime:
 
@@ -80,7 +88,7 @@ Each workspace owns its own env config:
 - `POST /api/ingredients/extract` accepts `{ images: string[] }`, where each image is a base64 JPEG string and the request contains 1-10 images.
 - `POST /api/recipes/generate` accepts `{ ingredients: string[]; excludeRecipeIds?: string[] }` and returns exactly five recipes.
 
-The backend validates request and model output with shared Zod schemas. Model responses are accepted only from Claude tool-use blocks, not free-text JSON.
+The backend validates request and model output with shared Zod schemas. Gemini extraction uses structured JSON output; Claude recipe generation uses forced tool-use blocks rather than free-text JSON.
 
 ## Development Workflow
 

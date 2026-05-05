@@ -35,7 +35,9 @@ function parseToolUseInput<T>(
   }
 }
 
-export async function extractIngredients(images: string[]): Promise<ExtractIngredientsResponse> {
+export async function extractIngredientsWithClaude(
+  images: string[],
+): Promise<ExtractIngredientsResponse> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const inputSchema = zodToJsonSchema(ExtractIngredientsResponseSchema as any, {
     $refStrategy: 'none',
@@ -79,6 +81,8 @@ export async function extractIngredients(images: string[]): Promise<ExtractIngre
     ExtractIngredientsResponseSchema,
   );
 }
+
+export { extractIngredientsWithClaude as extractIngredients };
 
 export async function generateRecipes(
   ingredients: string[],
