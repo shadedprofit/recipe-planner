@@ -24,12 +24,13 @@ Implemented:
 - Mobile recipe detail screen that reads the selected recipe from the store, falls back to fetching it from the server by id, and renders title, description, time, servings, tags, ingredients, and steps. Shows loading, error, and unavailable states.
 - Server-side SQLite recipe persistence: every generated recipe is upserted into a `recipes` table keyed by id, so recipe ids stay resolvable across sessions and devices.
 - `GET /api/recipes/:id` endpoint that reads from the SQLite store.
-- Server-only Docker Compose demo setup and generated demo ingredient images.
+- Expo Web export and static hosting configuration for a public frontend link.
+- Full-stack Docker Compose demo setup and generated demo ingredient images.
 - Husky hooks: `pre-commit` runs lint, and `pre-push` runs unit tests across all workspaces before pushing.
 
 Still planned:
 
-- CI, full mobile/web Docker demo, and deployment.
+- CI and live Railway deployment wiring.
 
 ## Recipe Data Source
 
@@ -154,6 +155,12 @@ Current capture behavior:
 The recipe list screen delegates network calls to `mobile/src/api/client.ts` and state to `mobile/src/store/recipeStore.ts`.
 
 `mobile/src/api/client.ts` requires `EXPO_PUBLIC_API_URL` so the app fails with a clear configuration error instead of silently trying an unreachable `localhost` from a physical device.
+
+Expo Web is built with `npm run build:web -w mobile`, which exports static files
+to `mobile/dist`. The recommended public deployment is Vercel for this static
+frontend and Railway for the Express backend. The web app needs
+`EXPO_PUBLIC_API_URL` at build time because Expo embeds public environment
+variables into the client bundle.
 
 Current recipe list behavior:
 

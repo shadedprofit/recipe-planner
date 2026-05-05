@@ -2,14 +2,13 @@
 
 This guide runs a local demo of the core product flow:
 
-1. Start the backend.
-2. Start the Expo mobile app.
-3. Upload one or more demo ingredient images.
-4. Generate recipes and open a recipe detail screen.
+1. Start the backend and Expo Web app with Docker Compose, or start the backend
+   and Expo mobile app separately.
+2. Upload one or more demo ingredient images.
+3. Generate recipes and open a recipe detail screen.
 
-The mobile app still runs through Expo Go, an iOS simulator, or an Android
-emulator. Docker Compose currently starts the backend only; this avoids the
-networking friction of trying to run a native Expo client inside Docker.
+Docker Compose runs the backend plus a static Expo Web build. The native mobile
+app still runs through Expo Go, an iOS simulator, or an Android emulator.
 
 ## Prerequisites
 
@@ -42,7 +41,7 @@ To use them in the mobile flow:
   images from your computer screen, but direct copies usually produce cleaner
   ingredient extraction.
 
-## Backend With Docker Compose
+## Full-Stack Docker Compose
 
 Create `server/.env` from `server/.env.example` and fill in real keys:
 
@@ -56,18 +55,24 @@ provider to Claude. Keep `server/.env` as plain `KEY=value` lines; avoid inline
 `#` comments on values because Docker Compose env-file parsing can differ from
 shell dotenv parsing.
 
-Then start the backend:
+Then start the backend and web app:
 
 ```bash
-npm run demo:server
+npm run demo
 ```
 
 That script runs `docker compose --env-file server/.env up --build`. If you
 prefer exporting environment variables yourself, `docker compose up --build`
 also works.
 
-By default, the backend listens on `http://localhost:3001`. If you set `PORT` in
-`server/.env`, Compose maps that same host and container port. Check it with:
+By default:
+
+- Web app: `http://localhost:8080`
+- Backend: `http://localhost:3001`
+
+The browser app is built with `EXPO_PUBLIC_API_URL=http://localhost:3001` unless
+you override it before running Compose. If you set `PORT` in `server/.env`,
+Compose maps that same host and container port. Check the backend with:
 
 ```bash
 curl http://localhost:3001/health
@@ -75,6 +80,12 @@ curl http://localhost:3001/health
 
 SQLite recipe cache data is stored in the named Docker volume
 `recipe-planner-data`.
+
+To run only the backend container:
+
+```bash
+npm run demo:server
+```
 
 ## Backend Without Docker
 
@@ -105,9 +116,15 @@ Then start Expo:
 npm run start -w mobile
 ```
 
+For browser development without Docker:
+
+```bash
+npm run web -w mobile
+```
+
 ## Demo Script
 
-1. Open the app in Expo Go or a simulator.
+1. Open `http://localhost:8080`, Expo Go, or a simulator.
 2. Tap to select images from the library.
 3. Choose one or more images from `demo-assets/`.
 4. Generate recipes.
@@ -120,5 +137,6 @@ npm run start -w mobile
 - The default demo depends on live Gemini API calls.
 - Recipe generation is cached model output for the demo, not a permanent recipe
   provider database.
-- Docker Compose starts the backend only. A full one-command browser demo would
-  require adding and validating Expo Web support first.
+- The local Docker web build is configured for browser access through
+  `http://localhost:3001`; deployed web builds must set `EXPO_PUBLIC_API_URL` to
+  the deployed backend URL at build time.

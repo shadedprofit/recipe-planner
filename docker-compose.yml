@@ -28,5 +28,18 @@ services:
       retries: 3
       start_period: 10s
 
+  web:
+    build:
+      context: .
+      dockerfile: mobile/Dockerfile
+      args:
+        EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-http://localhost:${PORT:-3001}}
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   recipe-planner-data:

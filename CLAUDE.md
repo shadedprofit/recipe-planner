@@ -40,12 +40,14 @@ Implemented:
 - Configurable ingredient extraction provider, defaulting to Gemini.
 - Configurable recipe generation provider, defaulting to Gemini.
 - SQLite-backed recipe cache via `better-sqlite3`.
-- Demo guide, generated demo ingredient images, and server-only Docker Compose.
+- Expo Web export for static frontend deployment.
+- Demo guide, generated demo ingredient images, and full-stack Docker Compose.
+- Vercel frontend deployment config.
 - Expo Router capture, recipe list, and recipe detail flows.
 - Mobile recipe detail falls back to server fetch by id on cold start.
 - Husky hooks: `pre-commit` runs lint, and `pre-push` runs unit tests.
 
-Still planned: CI, full mobile/web Docker demo, and Railway deployment.
+Still planned: CI and live Railway deployment.
 
 ## Commands
 
@@ -67,6 +69,9 @@ Workspace examples:
 ```bash
 npm run dev -w server
 npm run start -w mobile
+npm run web -w mobile
+npm run build:web -w mobile
+npm run demo
 npm run test:coverage -w mobile
 ```
 
@@ -127,8 +132,9 @@ Server env lives in `server/.env`:
   defaults to `./data/recipes.db`; tests can use `:memory:`.
 - `PORT` is optional.
 
-Mobile API calls require `EXPO_PUBLIC_API_URL` in `mobile/.env.local`. Use a
-LAN-reachable URL for physical-device Expo testing.
+Mobile and web API calls require `EXPO_PUBLIC_API_URL`. Use
+`mobile/.env.local` for local Expo runs and Vercel project env vars for deployed
+web builds. Use a LAN-reachable URL for physical-device Expo testing.
 
 ## Workflow
 

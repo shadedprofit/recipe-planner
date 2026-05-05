@@ -4,6 +4,9 @@
 .expo
 .husky
 coverage
+dist
+mobile/dist
+web-build
 node_modules
 mobile/node_modules
 server/node_modules

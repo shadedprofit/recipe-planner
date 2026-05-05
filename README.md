@@ -17,13 +17,15 @@ Implemented:
 - Recipe list screen that extracts ingredients from selected photos, generates recipes, refreshes with dedup support, and links to recipe details.
 - Recipe detail screen that renders the selected recipe (title, description, time, servings, tags, ingredients, steps), falls back to fetching by id from the server on cold start, and renders explicit loading/error/unavailable states.
 - SQLite-backed recipe cache (`better-sqlite3`) so generated recipe ids resolve across sessions via `GET /api/recipes/:id`.
-- Demo guide, generated demo ingredient images, and server-only Docker Compose setup.
+- Expo Web export for deploying the app to a public link.
+- Demo guide, generated demo ingredient images, and full-stack Docker Compose setup.
+- Vercel frontend deployment config.
 - Husky hooks: `pre-commit` runs lint, and `pre-push` runs all workspace unit tests before a push.
 - Unit tests and coverage gates for implemented server, shared, mobile hook, API client, store, and recipe screen behavior.
 
 Not implemented yet:
 
-- CI, full mobile/web Docker demo, and Railway deployment wiring.
+- CI and live Railway deployment wiring.
 
 ## Stack
 
@@ -31,7 +33,7 @@ Not implemented yet:
 - **Mobile state**: Zustand + AsyncStorage for seen recipe history, TanStack Query for request orchestration
 - **Backend**: Node + Express (TypeScript), Gemini image extraction and recipe generation by default, optional Claude fallback providers, structured model output, SQLite recipe cache via `better-sqlite3`
 - **Shared**: Zod schemas consumed by both apps
-- **Planned hosting**: Railway backend and Expo Go mobile demo
+- **Planned hosting**: Vercel Expo Web frontend plus Railway backend with a persistent SQLite volume
 
 ## Repo Layout
 
@@ -42,7 +44,8 @@ shared/   Zod schemas + types
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the current design rationale, API contract, and implementation status.
-See [DEMO.md](DEMO.md) for a local demo walkthrough with generated sample images and Docker backend startup.
+See [DEMO.md](DEMO.md) for a local demo walkthrough with generated sample images and Docker startup.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the recommended Vercel + Railway deployment path.
 
 ## AI Agent Docs
 
@@ -71,7 +74,9 @@ Run a workspace command with `-w`, for example:
 ```bash
 npm run dev -w server
 npm run start -w mobile
-npm run demo:server
+npm run web -w mobile
+npm run build:web -w mobile
+npm run demo
 ```
 
 ## Environment Files
@@ -94,13 +99,15 @@ Server-side model keys stay in `server/.env`:
 
 The server entrypoint loads `server/.env` automatically for local
 `npm run dev -w server` and `npm run start -w server` runs. Docker Compose also
-reads the same file through `npm run demo:server`.
+reads the same file through `npm run demo` and `npm run demo:server`.
 
-`EXPO_PUBLIC_API_URL` must be reachable from the mobile runtime:
+`EXPO_PUBLIC_API_URL` must be reachable from the client runtime:
 
 - iOS simulator: `http://localhost:3001`
 - Android emulator: `http://10.0.2.2:3001`
 - Physical device: `http://<your-computer-lan-ip>:3001`
+- Local Docker web demo: `http://localhost:3001`
+- Vercel web deployment: the public Railway backend URL
 
 ## API Summary
 
