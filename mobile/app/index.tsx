@@ -11,12 +11,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { tokens } from '../src/theme/tokens';
 import { MAX_IMAGES, useImageSelection } from '../src/hooks/useImageSelection';
+import { useRecipeStore } from '../src/store/recipeStore';
 
 export default function CaptureScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { images, isLoading, error, pickFromLibrary, pickFromCamera, removeImage } =
     useImageSelection();
+  const setSelectedImages = useRecipeStore((state) => state.setSelectedImages);
 
   const atLimit = images.length >= MAX_IMAGES;
   const controlsDisabled = atLimit || isLoading;
@@ -116,7 +118,10 @@ export default function CaptureScreen() {
           !canProceed && styles.proceedBtnDisabled,
           pressed && canProceed && styles.pressed,
         ]}
-        onPress={() => router.push('/recipes')}
+        onPress={() => {
+          setSelectedImages(images);
+          router.push('/recipes');
+        }}
         disabled={!canProceed}
         accessibilityLabel="Find recipes from selected photos"
         accessibilityRole="button"

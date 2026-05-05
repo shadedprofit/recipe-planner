@@ -16,18 +16,18 @@ Implemented:
 - Server health, ingredient extraction, and recipe generation routes.
 - Claude tool-use integration and Zod validation of model output.
 - Mobile capture screen that can select camera/library images, resize/compress them, and keep base64 data ready for upload.
+- Mobile API client for extraction and generation endpoints.
+- Mobile recipe store that keeps selected images, detected ingredients, generated recipes, and persisted seen recipe IDs.
+- Mobile recipe list screen that extracts ingredients, generates exactly five recipes, refreshes with dedup support, and stores the latest recipes.
+- Mobile recipe detail screen that reads the selected recipe from the store, renders title, description, time, servings, tags, ingredients, and steps, and shows an unavailable state when the session no longer contains the recipe.
 
 Still planned:
 
-- Mobile API client.
-- Persisted Zustand store for selected images, seen recipe IDs, and generated recipes.
-- Recipe list generation and refresh screen.
-- Recipe detail rendering from stored recipes. The route exists, but it is still a placeholder.
 - CI, git hooks, Docker, and deployment.
 
 ## Data Flow
 
-Planned end-to-end flow:
+Current recipe generation flow:
 
 1. Mobile captures or selects images.
 2. `useImageSelection` resizes each image to width 1024, compresses JPEG output at `0.7`, and stores `{ uri, base64 }` in component state.
@@ -38,8 +38,9 @@ Planned end-to-end flow:
 7. Mobile sends ingredient names plus `excludeRecipeIds` to `POST /api/recipes/generate`.
 8. Server forces the `generate_recipes` tool and validates exactly five recipes with unique IDs.
 9. Mobile appends returned recipe IDs to persisted `seenRecipeIds`.
+10. User taps a recipe; detail screen reads the recipe from the store by `id` and renders the full details.
 
-Steps 1-6 are partially implemented: mobile can prepare images, and the server endpoint exists. The mobile API call is not wired yet.
+Recipes are kept in memory only for the active session; if the session is cleared, the detail screen shows an unavailable state instead of fabricating data.
 
 ## Shared Contracts
 
@@ -86,8 +87,8 @@ Error handling:
 The mobile app uses Expo Router:
 
 - `mobile/app/index.tsx`: capture screen, implemented.
-- `mobile/app/recipes.tsx`: recipe list placeholder.
-- `mobile/app/recipes/[id].tsx`: recipe detail placeholder.
+- `mobile/app/recipes.tsx`: recipe generation and list screen, implemented.
+- `mobile/app/recipes/[id].tsx`: recipe detail screen, implemented.
 
 The capture screen delegates native image work to `mobile/src/hooks/useImageSelection.ts`.
 
@@ -101,6 +102,19 @@ Current capture behavior:
 - Displays a stable 3-column thumbnail grid.
 - Provides accessible remove controls and user-facing error messages.
 
+The recipe list screen delegates network calls to `mobile/src/api/client.ts` and state to `mobile/src/store/recipeStore.ts`.
+
+`mobile/src/api/client.ts` requires `EXPO_PUBLIC_API_URL` so the app fails with a clear configuration error instead of silently trying an unreachable `localhost` from a physical device.
+
+Current recipe list behavior:
+
+- Runs initial generation when selected images are available.
+- Calls ingredient extraction before recipe generation.
+- Sends `seenRecipeIds` as `excludeRecipeIds` for refresh deduplication.
+- Stores returned recipes and appends their IDs to history after successful generation.
+- Shows explicit empty, loading, and error states.
+- Confirms destructive history clearing with `Alert`.
+
 ## Testing Strategy
 
 Each workspace has an 85% global Jest coverage threshold.
@@ -109,7 +123,7 @@ Current coverage focus:
 
 - `shared`: schema invariants.
 - `server`: routes, middleware, Claude service behavior with mocked Anthropic SDK.
-- `mobile`: design tokens and `useImageSelection`.
+- `mobile`: design tokens, `useImageSelection`, API client, recipe store, recipe list screen, and recipe detail screen.
 
 Future mobile work should continue to push native-module behavior into hooks so it can be tested without device APIs.
 

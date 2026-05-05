@@ -27,14 +27,13 @@ Implemented:
 - Claude service integration in `server/src/services/claude.ts`.
 - Expo Router mobile scaffold with capture, recipe list, and recipe detail routes.
 - Capture screen with camera/library selection, thumbnail grid, image removal, resize/compress/base64 conversion, loading state, and user-facing error messages.
+- Mobile API client in `mobile/src/api/client.ts`.
+- Persisted recipe store in `mobile/src/store/recipeStore.ts`; only `seenRecipeIds` is persisted to AsyncStorage.
+- Recipe list screen that extracts ingredients, generates recipes, refreshes with `excludeRecipeIds`, and stores generated recipes for the detail screen.
+- Recipe detail screen that renders the selected recipe from the store and shows an unavailable state when the session no longer holds it.
 
 Not implemented yet:
 
-- Mobile API client.
-- Persisted Zustand recipe store.
-- End-to-end ingredient extraction from selected photos.
-- Recipe list generation/refresh UI.
-- Recipe detail rendering from stored recipes. The route exists, but it is still a placeholder.
 - CI, Husky hooks, Docker, Railway deployment.
 
 ## Commands
@@ -86,6 +85,8 @@ Patterns to preserve:
 - Unit tests mock `@anthropic-ai/sdk` at the module level.
 
 ## API Contracts
+
+Mobile API calls require `EXPO_PUBLIC_API_URL` in `mobile/.env.local`. Do not rely on `localhost` for physical-device Expo testing; use a LAN-reachable URL.
 
 `POST /api/ingredients/extract`
 

@@ -11,20 +11,20 @@ Implemented:
 - Express backend with health, ingredient extraction, and recipe generation endpoints.
 - Anthropic Claude integration with forced tool-use structured output.
 - Expo Router mobile scaffold with a capture screen for camera/library image selection, thumbnail removal, resizing, and base64 conversion.
-- Unit tests and coverage gates for implemented server, shared, and mobile hook behavior.
+- Mobile API client for extraction/generation requests.
+- Mobile recipe store for selected images, detected ingredients, generated recipes, and seen recipe IDs. Only seen recipe IDs are persisted to AsyncStorage.
+- Recipe list screen that extracts ingredients from selected photos, generates recipes, refreshes with dedup support, and links to recipe details.
+- Recipe detail screen that renders the selected recipe (title, description, time, servings, tags, ingredients, steps) and shows an unavailable state when the session no longer holds it.
+- Unit tests and coverage gates for implemented server, shared, mobile hook, API client, store, and recipe screen behavior.
 
 Not implemented yet:
 
-- Mobile API client and persisted recipe store.
-- Ingredient extraction flow from selected photos into generated recipes.
-- Recipe list refresh and dedup UI.
-- Recipe detail rendering from stored recipes. The route exists, but it is still a placeholder.
 - CI, Husky hooks, Docker, and Railway deployment wiring.
 
 ## Stack
 
 - **Mobile**: Expo SDK 52, TypeScript, Expo Router, React Native, `expo-image-picker`, `expo-image-manipulator`
-- **Planned mobile state**: Zustand + AsyncStorage for persisted client state, TanStack Query for server state
+- **Mobile state**: Zustand + AsyncStorage for seen recipe history, TanStack Query for request orchestration
 - **Backend**: Node + Express (TypeScript), Anthropic Claude Sonnet 4.6, structured output via tool-use
 - **Shared**: Zod schemas consumed by both apps
 - **Planned hosting**: Railway backend and Expo Go mobile demo
@@ -67,6 +67,12 @@ Each workspace owns its own env config:
 - `mobile/.env.local` — `EXPO_PUBLIC_API_URL` (gitignored; `.env.example` committed)
 
 `EXPO_PUBLIC_*` vars are bundled into the mobile JS — secrets stay server-side.
+
+`EXPO_PUBLIC_API_URL` must be reachable from the mobile runtime:
+
+- iOS simulator: `http://localhost:3001`
+- Android emulator: `http://10.0.2.2:3001`
+- Physical device: `http://<your-computer-lan-ip>:3001`
 
 ## API Summary
 
