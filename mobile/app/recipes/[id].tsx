@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Recipe, RecipeIngredient } from 'recipe-planner-shared';
+import { ApiError, getRecipe } from '../../src/api/client';
 import { useRecipeStore } from '../../src/store/recipeStore';
 import { tokens } from '../../src/theme/tokens';
 
@@ -13,30 +14,79 @@ function formatIngredient(ingredient: RecipeIngredient): string {
   return measure ? `${measure} ${ingredient.name}` : ingredient.name;
 }
 
+type FetchStatus = 'idle' | 'loading' | 'not-found' | 'error';
+
 export default function RecipeDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const recipes = useRecipeStore((state) => state.recipes);
 
-  const recipe = useMemo<Recipe | undefined>(
+  const recipeFromStore = useMemo<Recipe | undefined>(
     () => recipes.find((entry) => entry.id === id),
     [recipes, id],
   );
 
+  const [fetchedRecipe, setFetchedRecipe] = useState<Recipe | null>(null);
+  const [status, setStatus] = useState<FetchStatus>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id || recipeFromStore) return;
+    let cancelled = false;
+    setStatus('loading');
+    setErrorMessage(null);
+    setFetchedRecipe(null);
+    getRecipe(id)
+      .then((recipe) => {
+        if (cancelled) return;
+        setFetchedRecipe(recipe);
+        setStatus('idle');
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        if (err instanceof ApiError && err.status === 404) {
+          setStatus('not-found');
+          return;
+        }
+        setStatus('error');
+        setErrorMessage(err instanceof Error ? err.message : 'Could not load recipe.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, recipeFromStore]);
+
+  const recipe = recipeFromStore ?? (fetchedRecipe?.id === id ? fetchedRecipe : null);
+
+  const containerStyle = [
+    styles.container,
+    { paddingTop: insets.top + tokens.spacing.md, paddingBottom: insets.bottom },
+  ];
+
   if (!recipe) {
+    if (status === 'loading') {
+      return (
+        <View style={containerStyle}>
+          <View style={styles.emptyState} accessibilityRole="alert">
+            <ActivityIndicator size="large" color={tokens.colors.primary} />
+            <Text style={styles.emptyText}>Loading recipe...</Text>
+          </View>
+        </View>
+      );
+    }
+
+    const title = status === 'error' ? 'Could not load recipe' : 'Recipe unavailable';
+    const message =
+      status === 'error'
+        ? (errorMessage ?? 'Something went wrong loading this recipe.')
+        : 'This recipe is no longer available. Generate a new batch to see details.';
+
     return (
-      <View
-        style={[
-          styles.container,
-          { paddingTop: insets.top + tokens.spacing.md, paddingBottom: insets.bottom },
-        ]}
-      >
+      <View style={containerStyle}>
         <View style={styles.emptyState} accessibilityRole="alert">
-          <Text style={styles.emptyTitle}>Recipe unavailable</Text>
-          <Text style={styles.emptyText}>
-            This recipe is no longer in your current session. Generate a new batch to see details.
-          </Text>
+          <Text style={styles.emptyTitle}>{title}</Text>
+          <Text style={styles.emptyText}>{message}</Text>
         </View>
         <Pressable
           style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
@@ -51,12 +101,7 @@ export default function RecipeDetailScreen() {
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: insets.top + tokens.spacing.md, paddingBottom: insets.bottom },
-      ]}
-    >
+    <View style={containerStyle}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{recipe.title}</Text>
         {recipe.description.length > 0 && (

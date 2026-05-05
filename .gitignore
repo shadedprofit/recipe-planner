@@ -45,3 +45,14 @@ coverage/
 .cache/
 *.tgz
 codex-handoff.md
+
+# Personal AI-tool settings
+.claude/settings.local.json
+.codex/*.local.*
+
+# Local SQLite recipe cache
+server/data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

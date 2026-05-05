@@ -20,11 +20,34 @@ Implemented:
 - Mobile API client for extraction and generation endpoints.
 - Mobile recipe store that keeps selected images, detected ingredients, generated recipes, and persisted seen recipe IDs.
 - Mobile recipe list screen that extracts ingredients, generates exactly five recipes, refreshes with dedup support, and stores the latest recipes.
-- Mobile recipe detail screen that reads the selected recipe from the store, renders title, description, time, servings, tags, ingredients, and steps, and shows an unavailable state when the session no longer contains the recipe.
+- Mobile recipe detail screen that reads the selected recipe from the store, falls back to fetching it from the server by id, and renders title, description, time, servings, tags, ingredients, and steps. Shows loading, error, and unavailable states.
+- Server-side SQLite recipe persistence: every generated recipe is upserted into a `recipes` table keyed by id, so recipe ids stay resolvable across sessions and devices.
+- `GET /api/recipes/:id` endpoint that reads from the SQLite store.
+- Husky hooks: `pre-commit` runs lint, and `pre-push` runs unit tests across all workspaces before pushing.
 
 Still planned:
 
-- CI, git hooks, Docker, and deployment.
+- CI, Docker, and deployment.
+
+## Recipe Data Source
+
+For the demo / MVP the recipe data source is **Claude generation cached in SQLite**:
+
+- `POST /api/recipes/generate` calls Claude, validates the response, and persists each recipe with `INSERT OR IGNORE` into `server/data/recipes.db`.
+- `GET /api/recipes/:id` serves persisted recipes by id, so a recipe id minted in one session remains resolvable later (mobile detail screen, future sharing, etc.).
+- `excludeRecipeIds` is still passed prompt-side to Claude as a soft hint for batch deduplication.
+
+This is intentionally a "cache the model output, treat it as our dataset" approach. It is fast to ship, requires no third-party data licensing, and avoids fabricating a detail page when the in-memory store is empty. That makes it a good demo/MVP choice, but it is not the long-term product bet.
+
+### Future work: real recipe API
+
+If this project continues past the demo, the recommended next step is to commit to a real recipe provider API as the source of truth and demote the LLM to a ranker/adapter. Concretely:
+
+- Use a service such as Spoonacular or Edamam (find-by-ingredients endpoint) to retrieve real, attributed recipes with images, nutrition, and source URLs.
+- Keep the SQLite cache as a local mirror keyed by the provider's recipe id.
+- Optionally use Claude to score / rerank / rewrite the top results into a five-recipe batch, instead of generating recipes from scratch.
+
+This was deferred because it adds API quotas, licensing terms, and an ingredient-taxonomy mapping problem that are not justified by a demo build.
 
 ## Data Flow
 
@@ -40,9 +63,10 @@ Current recipe generation flow:
 8. Mobile sends ingredient names plus `excludeRecipeIds` to `POST /api/recipes/generate`.
 9. Server forces the `generate_recipes` Claude tool and validates exactly five recipes with unique IDs.
 10. Mobile appends returned recipe IDs to persisted `seenRecipeIds`.
-11. User taps a recipe; detail screen reads the recipe from the store by `id` and renders the full details.
+11. Server upserts each generated recipe into the SQLite `recipes` table.
+12. User taps a recipe; detail screen first reads from the in-memory store and, on a miss, fetches `GET /api/recipes/:id` so cold-start navigation still resolves to a real recipe.
 
-Recipes are kept in memory only for the active session; if the session is cleared, the detail screen shows an unavailable state instead of fabricating data.
+Recipes are still cleared from in-memory state when the session resets, but the SQLite cache means a known recipe id always resolves to a real payload rather than a fabricated one. If the recipe id is genuinely unknown to the server (e.g. wiped DB), the detail screen renders an explicit unavailable state.
 
 ## Shared Contracts
 
@@ -67,6 +91,11 @@ Server and mobile should import contracts from `recipe-planner-shared`, not from
 - `GET /health`
 - `POST /api/ingredients/extract`
 - `POST /api/recipes/generate`
+- `GET /api/recipes/:id`
+
+`server/src/db/database.ts` opens a single SQLite database lazily via `better-sqlite3` and applies the schema. The DB path is taken from `RECIPE_DB_PATH` (default `./data/recipes.db`, resolved against the server CWD). Tests override the path to `:memory:` so they never touch the filesystem.
+
+`server/src/services/recipeStore.ts` owns recipe persistence: `saveRecipes` upserts via `INSERT OR IGNORE` so re-generating a known id is idempotent, and `getRecipeById` validates the JSON payload through `RecipeSchema` before returning.
 
 `server/src/services/ingredientExtraction.ts` selects the image extraction provider from `INGREDIENT_EXTRACTION_PROVIDER`, defaulting to `gemini`.
 
@@ -88,6 +117,7 @@ Server env:
 - `GEMINI_API_KEY`: required when image extraction uses Gemini.
 - `GEMINI_INGREDIENT_MODEL`: optional override for the Gemini extraction model.
 - `ANTHROPIC_API_KEY`: required for recipe generation and for Claude extraction fallback.
+- `RECIPE_DB_PATH`: optional override for the SQLite recipe cache path. Defaults to `./data/recipes.db` (created on demand) and accepts `:memory:` for ephemeral runs.
 
 Error handling:
 

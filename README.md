@@ -15,18 +15,20 @@ Implemented:
 - Mobile API client for extraction/generation requests.
 - Mobile recipe store for selected images, detected ingredients, generated recipes, and seen recipe IDs. Only seen recipe IDs are persisted to AsyncStorage.
 - Recipe list screen that extracts ingredients from selected photos, generates recipes, refreshes with dedup support, and links to recipe details.
-- Recipe detail screen that renders the selected recipe (title, description, time, servings, tags, ingredients, steps) and shows an unavailable state when the session no longer holds it.
+- Recipe detail screen that renders the selected recipe (title, description, time, servings, tags, ingredients, steps), falls back to fetching by id from the server on cold start, and renders explicit loading/error/unavailable states.
+- SQLite-backed recipe cache (`better-sqlite3`) so generated recipe ids resolve across sessions via `GET /api/recipes/:id`.
+- Husky hooks: `pre-commit` runs lint, and `pre-push` runs all workspace unit tests before a push.
 - Unit tests and coverage gates for implemented server, shared, mobile hook, API client, store, and recipe screen behavior.
 
 Not implemented yet:
 
-- CI, Husky hooks, Docker, and Railway deployment wiring.
+- CI, Docker, and Railway deployment wiring.
 
 ## Stack
 
 - **Mobile**: Expo SDK 52, TypeScript, Expo Router, React Native, `expo-image-picker`, `expo-image-manipulator`
 - **Mobile state**: Zustand + AsyncStorage for seen recipe history, TanStack Query for request orchestration
-- **Backend**: Node + Express (TypeScript), Gemini image extraction by default, Anthropic Claude Sonnet 4.6 recipe generation, structured model output
+- **Backend**: Node + Express (TypeScript), Gemini image extraction by default, Anthropic Claude Sonnet 4.6 recipe generation, structured model output, SQLite recipe cache via `better-sqlite3`
 - **Shared**: Zod schemas consumed by both apps
 - **Planned hosting**: Railway backend and Expo Go mobile demo
 
@@ -39,6 +41,15 @@ shared/   Zod schemas + types
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the current design rationale, API contract, and implementation status.
+
+## AI Agent Docs
+
+- `AGENTS.md` is the Codex entrypoint.
+- `CLAUDE.md` is the Claude Code entrypoint.
+- `.claude/` is reserved for Claude Code-native project extensions such as
+  subagents, commands, and shared settings.
+- `.codex/` is reserved for optional Codex support docs or skill notes; critical
+  Codex instructions stay in `AGENTS.md`.
 
 ## Quick Start
 
@@ -64,7 +75,7 @@ npm run start -w mobile
 
 Each workspace owns its own env config:
 
-- `server/.env` — `INGREDIENT_EXTRACTION_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_INGREDIENT_MODEL`, `ANTHROPIC_API_KEY`, `PORT` (gitignored; `.env.example` committed)
+- `server/.env` — `INGREDIENT_EXTRACTION_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_INGREDIENT_MODEL`, `ANTHROPIC_API_KEY`, `PORT`, optional `RECIPE_DB_PATH` (gitignored; `.env.example` committed)
 - `mobile/.env.local` — `EXPO_PUBLIC_API_URL` (gitignored; `.env.example` committed)
 
 `EXPO_PUBLIC_*` vars are bundled into the mobile JS — secrets stay server-side.
@@ -86,9 +97,12 @@ Server-side model keys stay in `server/.env`:
 
 - `GET /health` returns `{ ok: true, model: string }`.
 - `POST /api/ingredients/extract` accepts `{ images: string[] }`, where each image is a base64 JPEG string and the request contains 1-10 images.
-- `POST /api/recipes/generate` accepts `{ ingredients: string[]; excludeRecipeIds?: string[] }` and returns exactly five recipes.
+- `POST /api/recipes/generate` accepts `{ ingredients: string[]; excludeRecipeIds?: string[] }` and returns exactly five recipes. Each generated recipe is upserted into the SQLite recipe cache.
+- `GET /api/recipes/:id` returns `{ recipe }` from the cache, or 404 when the id is unknown.
 
 The backend validates request and model output with shared Zod schemas. Gemini extraction uses structured JSON output; Claude recipe generation uses forced tool-use blocks rather than free-text JSON.
+
+For demo/MVP purposes, the recipe data source is Claude generation cached in SQLite: the app treats generated recipe payloads as a local cache keyed by recipe id so detail screens and future share links can resolve without inventing content. This is a deliberate demo tradeoff, not the intended long-term source of truth. If this project continues past the demo, the planned next step is to commit to a real recipe provider API (for example Spoonacular or Edamam) as the canonical source and demote the LLM to a ranker/adapter. See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 
 ## Development Workflow
 
@@ -96,7 +110,7 @@ For each feature or bug fix:
 
 1. Keep changes typed and scoped to the relevant workspace.
 2. Update docs in the same logical commit when behavior, setup, API contracts, environment variables, architecture, or workflow changes.
-3. Run lint, typecheck, format check, and tests before pushing.
+3. Run lint, typecheck, format check, and tests before pushing. Husky also runs `npm run lint` from `.husky/pre-commit` and `npm test` from `.husky/pre-push`.
 4. Run coverage before pushing because each workspace has an 85% global threshold.
 5. Have an independent review pass check code, tests, and docs impact before pushing.
 

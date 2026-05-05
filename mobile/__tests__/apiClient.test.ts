@@ -1,4 +1,4 @@
-import { extractIngredients, generateRecipes } from '../src/api/client';
+import { extractIngredients, generateRecipes, getRecipe, ApiError } from '../src/api/client';
 
 const originalFetch = global.fetch;
 
@@ -103,5 +103,59 @@ describe('api client', () => {
       'EXPO_PUBLIC_API_URL is not set',
     );
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('getRecipe fetches a recipe by id and unwraps the payload', async () => {
+    const recipe = {
+      id: 'recipe-1',
+      title: 'Recipe 1',
+      description: 'desc',
+      totalTimeMinutes: 25,
+      servings: 2,
+      ingredients: [{ name: 'egg', quantity: '2', unit: '' }],
+      steps: ['Cook it'],
+      tags: [],
+    };
+    mockFetch.mockResolvedValue(mockResponse({ recipe }));
+
+    const result = await getRecipe('recipe-1');
+
+    expect(result).toEqual(recipe);
+    expect(mockFetch).toHaveBeenCalledWith('http://localhost:3001/api/recipes/recipe-1', {
+      method: 'GET',
+    });
+  });
+
+  it('getRecipe encodes the id segment', async () => {
+    const recipe = {
+      id: 'pasta primavera',
+      title: 'Pasta Primavera',
+      description: '',
+      totalTimeMinutes: 25,
+      servings: 2,
+      ingredients: [{ name: 'pasta', quantity: '8', unit: 'oz' }],
+      steps: ['Cook the pasta.'],
+      tags: [],
+    };
+    mockFetch.mockResolvedValue(mockResponse({ recipe }));
+
+    await getRecipe('pasta primavera');
+
+    expect(mockFetch).toHaveBeenCalledWith('http://localhost:3001/api/recipes/pasta%20primavera', {
+      method: 'GET',
+    });
+  });
+
+  it('getRecipe surfaces 404s as ApiError with status 404', async () => {
+    mockFetch.mockResolvedValue(
+      mockResponse({ error: 'Recipe not found' }, { ok: false, status: 404 }),
+    );
+
+    await expect(getRecipe('missing')).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 404,
+      message: 'Recipe not found',
+    });
+    expect(ApiError).toBeDefined();
   });
 });

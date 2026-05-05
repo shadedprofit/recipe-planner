@@ -1,13 +1,12 @@
 # AGENTS.md
 
-This is the Codex guidance file for this repository. Treat it as the repo-level
-equivalent of `CLAUDE.md`: it applies to the full tree unless a more specific
-`AGENTS.md` is added in a subdirectory.
+Codex uses this file as the repo-level project instruction entrypoint. Keep it
+short enough to load reliably and treat `README.md` plus `ARCHITECTURE.md` as
+the product and architecture source of truth.
 
 ## Project
 
-Smart Recipe Planner is an Expo mobile app plus an Express backend. The product
-flow is:
+Smart Recipe Planner is an Expo mobile app plus an Express backend:
 
 1. User takes or uploads one or more ingredient photos.
 2. Backend extracts visible ingredients with a configurable vision provider.
@@ -16,39 +15,36 @@ flow is:
    IDs as exclusions.
 5. User can open a recipe detail screen.
 
-Current architecture notes live in `ARCHITECTURE.md`. `README.md` is the
-developer quick-start. `CLAUDE.md` remains useful context for Claude Code, but
-Codex should prefer this file plus the tracked project docs.
+## AI Docs Layout
 
-The historical handoff file `codex-handoff.md` may exist locally, is ignored by
-git, and is not authoritative. Do not commit it unless explicitly asked.
+- `AGENTS.md`: Codex entrypoint and repo-level working rules.
+- `CLAUDE.md`: Claude Code entrypoint with the same high-level project rules.
+- `.codex/`: optional Codex support docs, templates, or skill notes. Codex does
+  not treat this as a replacement for `AGENTS.md`.
+- `.claude/`: Claude Code native project extensions such as subagents, commands,
+  and shared settings.
+- `README.md`: developer quick-start and current implementation summary.
+- `ARCHITECTURE.md`: current design, data flow, API contracts, and rationale.
 
-## Current Implementation Status
+Do not move critical instructions out of `AGENTS.md` unless this file links to
+them clearly and they are safe to load on demand.
+
+## Current Implementation
 
 Implemented:
 
 - npm workspaces: `mobile`, `server`, and `shared`.
-- Shared Zod schemas for API payloads and recipe/ingredient data.
-- Server endpoints:
-  - `GET /health`
-  - `POST /api/ingredients/extract`
-  - `POST /api/recipes/generate`
-- Configurable ingredient extraction provider in `server/src/services/ingredientExtraction.ts`, defaulting to Gemini.
-- Anthropic Claude recipe generation in `server/src/services/claude.ts`.
-- Expo Router mobile routes for capture, recipe list, and recipe detail.
-- Capture screen with camera/library selection, thumbnail grid, image removal,
-  resize/compress/base64 conversion, loading state, and user-facing errors.
-- Mobile API client in `mobile/src/api/client.ts`.
-- Persisted recipe store in `mobile/src/store/recipeStore.ts`; only
-  `seenRecipeIds` is persisted to AsyncStorage.
-- Recipe list screen that extracts ingredients, generates recipes, refreshes
-  with `excludeRecipeIds`, and stores generated recipes for the detail screen.
-- Recipe detail screen that renders the selected recipe from the store and shows
-  an unavailable state when the session no longer holds it.
+- Server endpoints: `GET /health`, `POST /api/ingredients/extract`,
+  `POST /api/recipes/generate`, and `GET /api/recipes/:id`.
+- Configurable ingredient extraction provider, defaulting to Gemini.
+- Claude recipe generation with forced tool-use structured output.
+- SQLite-backed recipe cache via `better-sqlite3`; generated recipes are stored
+  by id and used by the detail endpoint.
+- Expo Router mobile capture, recipe list, and recipe detail flows.
+- Zustand mobile recipe store; only `seenRecipeIds` persists to AsyncStorage.
+- Husky hooks: `pre-commit` runs lint, and `pre-push` runs unit tests.
 
-Not implemented yet:
-
-- CI, Husky hooks, Docker, Railway deployment.
+Still planned: CI, Docker, and Railway deployment.
 
 ## Commands
 
@@ -76,146 +72,85 @@ npm run test:coverage -w mobile
 ## Architecture Rules
 
 - `mobile/`: Expo SDK 52, Expo Router, React Native, TypeScript.
-- Mobile request orchestration uses TanStack Query. Mobile recipe state uses
-  Zustand, with AsyncStorage persistence limited to seen recipe history.
 - `server/`: Express + TypeScript. Runtime uses `tsx`; no build step is
   required yet.
-- `shared/`: Zod schemas and inferred types, consumed as the
-  `recipe-planner-shared` workspace package.
-- Do not introduce cross-workspace path aliases. Import shared contracts by
-  package name (`recipe-planner-shared`) so npm workspace symlinks handle
-  resolution.
+- `shared/`: Zod schemas and inferred types consumed as
+  `recipe-planner-shared`.
+- Import shared contracts by package name, not cross-workspace relative paths.
 - Keep model API keys server-side only.
-- Do not rename files or symbols just to replace "Claude" branding; Claude is
-  one model provider and `server/src/services/claude.ts` is intentionally named.
+- Do not rename files or symbols just to replace "Claude" branding;
+  `server/src/services/claude.ts` is intentionally named.
+- Use shared Zod schemas for API boundary validation.
+- Prefer local patterns and scoped changes over new abstractions.
 
-## Model Provider Integration
+## Recipe Data Source
 
-Ingredient image extraction is selected by `INGREDIENT_EXTRACTION_PROVIDER`:
+The current recipe data source is Claude generation cached in SQLite. This is a
+demo/MVP tradeoff: generated recipe ids remain resolvable across sessions
+without committing to a third-party recipe-provider integration yet.
 
-- `gemini` is the default and uses `server/src/services/gemini.ts`.
-- `claude` uses the fallback extraction path in `server/src/services/claude.ts`.
+Longer term, the app should commit to a real recipe provider API as the
+canonical source. SQLite can remain a local mirror keyed by provider recipe id,
+and Claude can shift to ranking, adapting, or rewriting provider results.
 
-All Google GenAI SDK usage belongs in `server/src/services/gemini.ts`. Gemini extraction requires `GEMINI_API_KEY` and defaults to `gemini-2.5-flash`; `GEMINI_INGREDIENT_MODEL` can override that model.
+## Provider Rules
 
-All Anthropic SDK usage belongs in `server/src/services/claude.ts`. Claude remains responsible for recipe generation and for the optional Claude extraction fallback.
-
-Patterns to preserve:
-
+- Ingredient extraction is selected by `INGREDIENT_EXTRACTION_PROVIDER`.
+- Gemini extraction belongs in `server/src/services/gemini.ts`, requires
+  `GEMINI_API_KEY`, and defaults to `gemini-2.5-flash`.
+- Claude generation and fallback extraction belong in
+  `server/src/services/claude.ts`.
 - Provider outputs are always validated with shared Zod schemas.
-- Gemini extraction uses structured JSON output, not free-text JSON.
-- Claude vision calls send one user message containing N base64 JPEG image blocks plus
-  one trailing text block.
+- Gemini extraction uses structured JSON output.
 - Claude structured output uses forced tool-use:
   - `tools: [{ name, input_schema }]`
   - `tool_choice: { type: "tool", name }`
-  - parse the returned `tool_use.input`
-  - validate with the shared Zod schema
+  - parse `tool_use.input`
+  - validate with shared Zod schemas
 - Never parse free-text JSON from model output.
 - Unit tests mock `@google/genai` and `@anthropic-ai/sdk` at the module level.
 
-## API Contracts
+## API Notes
 
 Server env lives in `server/.env`:
 
 - `INGREDIENT_EXTRACTION_PROVIDER=gemini` by default.
 - `GEMINI_API_KEY` is required for Gemini ingredient extraction.
-- `GEMINI_INGREDIENT_MODEL` optionally overrides the default Gemini extraction model.
-- `ANTHROPIC_API_KEY` is required for Claude recipe generation and for extraction when `INGREDIENT_EXTRACTION_PROVIDER=claude`.
+- `GEMINI_INGREDIENT_MODEL` optionally overrides the Gemini extraction model.
+- `ANTHROPIC_API_KEY` is required for Claude recipe generation and Claude
+  extraction fallback.
+- `RECIPE_DB_PATH` optionally overrides the SQLite recipe cache path. It
+  defaults to `./data/recipes.db`; tests can use `:memory:`.
 - `PORT` is optional.
 
 Mobile API calls require `EXPO_PUBLIC_API_URL` in `mobile/.env.local`. Do not
 rely on `localhost` for physical-device Expo testing; use a LAN-reachable URL.
 
-`POST /api/ingredients/extract`
+## Mobile Rules
 
-```ts
-type Request = { images: string[] };
-type Response = { ingredients: { name: string; confidence: number }[] };
-```
-
-Constraints:
-
-- 1-10 images.
-- Each string must be non-empty and no larger than `MAX_IMAGE_B64_LEN`, the
-  base64 length corresponding to 5 MB decoded image data.
-
-`POST /api/recipes/generate`
-
-```ts
-type Request = { ingredients: string[]; excludeRecipeIds?: string[] };
-type Response = { recipes: Recipe[] };
-```
-
-Constraints:
-
-- At least one ingredient.
-- Response must contain exactly five recipes.
-- Recipe IDs must be unique in the returned batch.
-- `excludeRecipeIds` is sent to the model as an exclusion prompt; current schema
-  validation does not independently enforce that excluded IDs are absent from
-  the response.
-
-`GET /health`
-
-```ts
-type Response = { ok: true; model: string };
-```
-
-## Coding Standards
-
-- Prefer statically typed or inferred TypeScript over `any`.
-- Use shared Zod schemas for API boundary validation.
-- Keep changes scoped to the relevant workspace and avoid unrelated refactors.
-- Prefer existing local patterns over new abstractions.
-- Use `StyleSheet.create` and `mobile/src/theme/tokens.ts` for mobile styling.
-- Push native-module behavior into hooks under `mobile/src/hooks/` so screens
-  remain declarative and testable.
+- Use `StyleSheet.create` and `mobile/src/theme/tokens.ts` for styling.
+- Push native-module behavior into hooks under `mobile/src/hooks/`.
 - Use `Pressable` for tappable mobile elements.
-- Set `accessibilityRole` on buttons/links and `accessibilityLabel` on ambiguous
-  controls.
+- Set `accessibilityRole` on buttons/links and `accessibilityLabel` on
+  ambiguous controls.
 - Keep practical touch targets at least 44x44.
 - Use safe-area insets via `react-native-safe-area-context`.
 - Render explicit empty, loading, and error states.
 - Confirm destructive actions with `Alert`.
 
-## Testing
+## Testing And Workflow
 
 - Coverage threshold is 85% global per workspace.
 - Server route tests use `supertest`; in this sandbox, full server tests may
   require escalated local socket permissions.
 - Mobile hook tests use `renderHook` from `@testing-library/react-native`.
-- Mock native modules (`expo-image-picker`, `expo-image-manipulator`,
-  `expo-router`) rather than invoking platform behavior.
+- Mock native modules rather than invoking platform behavior.
 - Add or update focused tests when behavior changes.
-
-## Documentation Policy
-
-Docs are part of the development workflow. Update docs in the same logical
-commit when a change affects:
-
-- Setup or commands.
-- Environment variables.
-- API contracts.
-- Data flow or architecture.
-- User-facing behavior.
-- Testing, review, or deployment workflow.
-
-## Workflow
-
-For every feature change, bug fix, or docs change intended for push:
-
-1. Make a focused implementation with typed code where practical.
-2. Check whether docs need updates before pushing.
-3. Run verification:
-   - `npm run lint`
-   - `npm run typecheck`
-   - `npm run format:check`
-   - `npm test`
-   - `npm run test:coverage`
-4. Have a separate agent review code, tests, and docs impact before pushing.
-5. Fix review findings, rerun verification, amend if the commit is still local,
-   and only then push.
+- Update docs in the same logical commit when setup, env vars, API contracts,
+  data flow, architecture, user-facing behavior, testing, or deployment changes.
+- Before pushing, run lint, typecheck, format check, tests, and coverage.
+- Have an independent review pass check code, tests, and docs impact before
+  pushing.
 
 When committing, do not include unrelated local files. In particular, leave
 `codex-handoff.md` ignored unless the user explicitly asks to commit it.

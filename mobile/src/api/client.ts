@@ -1,10 +1,12 @@
 import {
   ExtractIngredientsResponseSchema,
   GenerateRecipesResponseSchema,
+  GetRecipeResponseSchema,
   type ExtractIngredientsRequest,
   type ExtractIngredientsResponse,
   type GenerateRecipesRequest,
   type GenerateRecipesResponse,
+  type Recipe,
 } from 'recipe-planner-shared';
 
 interface ApiClientTestGlobal {
@@ -35,17 +37,10 @@ function getApiUrl(): string {
   return apiUrl.replace(/\/$/, '');
 }
 
-async function postJson<TResponse>(
-  path: string,
-  body: unknown,
+async function handleJson<TResponse>(
+  response: Response,
   parseResponse: (value: unknown) => TResponse,
 ): Promise<TResponse> {
-  const response = await fetch(`${getApiUrl()}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
   const payload: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
@@ -62,6 +57,27 @@ async function postJson<TResponse>(
   return parseResponse(payload);
 }
 
+async function postJson<TResponse>(
+  path: string,
+  body: unknown,
+  parseResponse: (value: unknown) => TResponse,
+): Promise<TResponse> {
+  const response = await fetch(`${getApiUrl()}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return handleJson(response, parseResponse);
+}
+
+async function getJson<TResponse>(
+  path: string,
+  parseResponse: (value: unknown) => TResponse,
+): Promise<TResponse> {
+  const response = await fetch(`${getApiUrl()}${path}`, { method: 'GET' });
+  return handleJson(response, parseResponse);
+}
+
 export async function extractIngredients(
   request: ExtractIngredientsRequest,
 ): Promise<ExtractIngredientsResponse> {
@@ -76,4 +92,11 @@ export async function generateRecipes(
   return postJson('/api/recipes/generate', request, (payload) =>
     GenerateRecipesResponseSchema.parse(payload),
   );
+}
+
+export async function getRecipe(id: string): Promise<Recipe> {
+  const { recipe } = await getJson(`/api/recipes/${encodeURIComponent(id)}`, (payload) =>
+    GetRecipeResponseSchema.parse(payload),
+  );
+  return recipe;
 }

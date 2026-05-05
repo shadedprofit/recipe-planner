@@ -56,3 +56,8 @@ export const GenerateRecipesResponseSchema = z
     path: ['recipes'],
   });
 export type GenerateRecipesResponse = z.infer<typeof GenerateRecipesResponseSchema>;
+
+export const GetRecipeResponseSchema = z.object({
+  recipe: RecipeSchema,
+});
+export type GetRecipeResponse = z.infer<typeof GetRecipeResponseSchema>;
