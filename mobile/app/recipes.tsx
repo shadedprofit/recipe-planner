@@ -433,6 +433,7 @@ const styles = StyleSheet.create({
   contextRailWide: {
     width: tokens.layout.sideRailWidth,
     marginBottom: 0,
+    alignSelf: 'flex-start',
   },
   railLabel: {
     color: tokens.colors.primaryStrong,
