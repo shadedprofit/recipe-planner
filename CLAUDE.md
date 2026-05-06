@@ -72,6 +72,7 @@ npm run start -w mobile
 npm run web -w mobile
 npm run build:web -w mobile
 npm run demo
+npm run demo:down
 npm run test:coverage -w mobile
 ```
 

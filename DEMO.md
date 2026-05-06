@@ -65,6 +65,12 @@ That script runs `docker compose --env-file server/.env up --build`. If you
 prefer exporting environment variables yourself, `docker compose up --build`
 also works.
 
+To stop the demo containers:
+
+```bash
+npm run demo:down
+```
+
 By default:
 
 - Web app: `http://localhost:8080`
@@ -125,8 +131,8 @@ npm run web -w mobile
 ## Demo Script
 
 1. Open `http://localhost:8080`, Expo Go, or a simulator.
-2. Tap to select images from the library.
-3. Choose one or more images from `demo-assets/`.
+2. Tap Camera to capture a live browser photo, or tap Library to select files.
+3. Choose one or more images from `demo-assets/` when using Library.
 4. Generate recipes.
 5. Tap a recipe to open detail.
 6. Restart the mobile app and reopen the same recipe detail route if you want

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -12,17 +14,27 @@ import { useRouter } from 'expo-router';
 import { tokens } from '../src/theme/tokens';
 import { MAX_IMAGES, useImageSelection } from '../src/hooks/useImageSelection';
 import { useRecipeStore } from '../src/store/recipeStore';
+import { WebCameraCapture } from '../src/components/WebCameraCapture';
 
 export default function CaptureScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { images, isLoading, error, pickFromLibrary, pickFromCamera, removeImage } =
+  const [isWebCameraOpen, setIsWebCameraOpen] = useState(false);
+  const { images, isLoading, error, addImage, pickFromLibrary, pickFromCamera, removeImage } =
     useImageSelection();
   const setSelectedImages = useRecipeStore((state) => state.setSelectedImages);
 
   const atLimit = images.length >= MAX_IMAGES;
   const controlsDisabled = atLimit || isLoading;
   const canProceed = images.length > 0 && !isLoading;
+  const handleCameraPress = () => {
+    if (Platform.OS === 'web') {
+      setIsWebCameraOpen(true);
+      return;
+    }
+
+    void pickFromCamera();
+  };
 
   return (
     <View
@@ -91,7 +103,7 @@ export default function CaptureScreen() {
             styles.actionBtn,
             (pressed || controlsDisabled) && styles.actionBtnMuted,
           ]}
-          onPress={pickFromCamera}
+          onPress={handleCameraPress}
           disabled={controlsDisabled}
           accessibilityLabel="Take a photo with camera"
           accessibilityRole="button"
@@ -130,6 +142,12 @@ export default function CaptureScreen() {
           Find Recipes
         </Text>
       </Pressable>
+
+      <WebCameraCapture
+        visible={isWebCameraOpen}
+        onCapture={addImage}
+        onClose={() => setIsWebCameraOpen(false)}
+      />
     </View>
   );
 }

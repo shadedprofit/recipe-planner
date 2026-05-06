@@ -11,7 +11,7 @@ Implemented:
 - Express backend with health, ingredient extraction, and recipe generation endpoints.
 - Configurable ingredient image extraction, defaulting to Gemini with Claude as a fallback provider.
 - Configurable recipe generation, defaulting to Gemini with Claude as an optional provider.
-- Expo Router mobile scaffold with a capture screen for camera/library image selection, thumbnail removal, resizing, and base64 conversion.
+- Expo Router mobile scaffold with a capture screen for camera/library image selection, thumbnail removal, resizing, and base64 conversion. The web build uses browser camera capture for the Camera button.
 - Mobile API client for extraction/generation requests.
 - Mobile recipe store for selected images, detected ingredients, generated recipes, and seen recipe IDs. Only seen recipe IDs are persisted to AsyncStorage.
 - Recipe list screen that extracts ingredients from selected photos, generates recipes, refreshes with dedup support, and links to recipe details.
@@ -77,6 +77,7 @@ npm run start -w mobile
 npm run web -w mobile
 npm run build:web -w mobile
 npm run demo
+npm run demo:down
 ```
 
 ## Environment Files
@@ -99,7 +100,8 @@ Server-side model keys stay in `server/.env`:
 
 The server entrypoint loads `server/.env` automatically for local
 `npm run dev -w server` and `npm run start -w server` runs. Docker Compose also
-reads the same file through `npm run demo` and `npm run demo:server`.
+reads the same file through `npm run demo`, `npm run demo:server`, and
+`npm run demo:down`.
 
 `EXPO_PUBLIC_API_URL` must be reachable from the client runtime:
 

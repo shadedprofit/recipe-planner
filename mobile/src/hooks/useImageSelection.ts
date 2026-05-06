@@ -11,6 +11,7 @@ export interface UseImageSelectionReturn {
   images: SelectedImage[];
   isLoading: boolean;
   error: string | null;
+  addImage: (image: SelectedImage) => void;
   pickFromLibrary: () => Promise<void>;
   pickFromCamera: () => Promise<void>;
   removeImage: (uri: string) => void;
@@ -24,6 +25,7 @@ const COMPRESS = 0.7;
 const PROCESSING_ERROR = 'Could not process that photo. Please try another image.';
 const PICKER_ERROR = 'Could not open photos. Please try again.';
 const CAMERA_ERROR = 'Could not open the camera. Please try again.';
+const MAX_IMAGES_ERROR = `Maximum ${MAX_IMAGES} photos reached.`;
 
 async function resizeToBase64(uri: string): Promise<SelectedImage> {
   const ref = await ImageManipulator.manipulate(uri).resize({ width: RESIZE_WIDTH }).renderAsync();
@@ -38,6 +40,17 @@ export function useImageSelection(): UseImageSelectionReturn {
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const addImage = (image: SelectedImage) => {
+    setImages((prev) => {
+      if (prev.length >= MAX_IMAGES) {
+        setError(MAX_IMAGES_ERROR);
+        return prev;
+      }
+      setError(null);
+      return [...prev, image].slice(0, MAX_IMAGES);
+    });
+  };
 
   const pickFromLibrary = async () => {
     setError(null);
@@ -112,6 +125,7 @@ export function useImageSelection(): UseImageSelectionReturn {
     images,
     isLoading,
     error,
+    addImage,
     pickFromLibrary,
     pickFromCamera,
     removeImage,

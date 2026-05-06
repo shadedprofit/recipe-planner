@@ -56,6 +56,37 @@ describe('useImageSelection', () => {
     expect(result.current.error).toBeNull();
   });
 
+  it('adds an already processed image without opening a picker', () => {
+    const { result } = renderHook(() => useImageSelection());
+
+    act(() => result.current.addImage({ uri: 'data:image/jpeg;base64,abc', base64: 'abc' }));
+
+    expect(result.current.images).toEqual([{ uri: 'data:image/jpeg;base64,abc', base64: 'abc' }]);
+    expect(mockPicker.launchImageLibraryAsync).not.toHaveBeenCalled();
+    expect(mockPicker.launchCameraAsync).not.toHaveBeenCalled();
+  });
+
+  it('shows an error when adding an already processed image at the limit', () => {
+    const { result } = renderHook(() => useImageSelection());
+
+    act(() => {
+      Array.from({ length: MAX_IMAGES }, (_, i) =>
+        result.current.addImage({ uri: `data:image/jpeg;base64,abc${i}`, base64: `abc${i}` }),
+      );
+    });
+    expect(result.current.images).toHaveLength(MAX_IMAGES);
+
+    act(() =>
+      result.current.addImage({
+        uri: 'data:image/jpeg;base64,overflow',
+        base64: 'overflow',
+      }),
+    );
+
+    expect(result.current.images).toHaveLength(MAX_IMAGES);
+    expect(result.current.error).toBe('Maximum 10 photos reached.');
+  });
+
   describe('pickFromLibrary', () => {
     it('adds processed images when permission is granted', async () => {
       grantMediaLibrary();

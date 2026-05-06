@@ -18,7 +18,8 @@
     "test": "npm test --workspaces --if-present",
     "test:coverage": "npm test --workspaces --if-present -- --coverage",
     "demo": "docker compose --env-file server/.env up --build",
-    "demo:server": "docker compose --env-file server/.env up --build server"
+    "demo:server": "docker compose --env-file server/.env up --build server",
+    "demo:down": "docker compose --env-file server/.env down --remove-orphans"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
