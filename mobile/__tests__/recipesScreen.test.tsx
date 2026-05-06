@@ -10,10 +10,14 @@ import { initialRecipeState, useRecipeStore } from '../src/store/recipeStore';
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 const mockStorage = new Map<string, string>();
+let latestStackOptions: { headerLeft?: () => React.ReactNode } | undefined;
 
 jest.mock('expo-router', () => ({
   Stack: {
-    Screen: () => null,
+    Screen: ({ options }: { options?: { headerLeft?: () => React.ReactNode } }) => {
+      latestStackOptions = options;
+      return null;
+    },
   },
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
@@ -87,6 +91,7 @@ describe('RecipesScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockStorage.clear();
+    latestStackOptions = undefined;
     Object.defineProperty(Platform, 'OS', { value: originalPlatform, configurable: true });
     useRecipeStore.setState(initialRecipeState);
   });
@@ -150,6 +155,23 @@ describe('RecipesScreen', () => {
 
     expect(screen.getByText('No photos selected')).toBeTruthy();
     expect(screen.getByText('Go back and add ingredient photos first.')).toBeTruthy();
+  });
+
+  it('renders a polished photos back control in the navigation header', () => {
+    useRecipeStore.setState({
+      selectedImages: [{ uri: 'file://photo.jpg', base64: 'base64-photo' }],
+      recipes: buildRecipes('current'),
+    });
+
+    renderScreen();
+    const headerLeft = latestStackOptions?.headerLeft;
+    expect(headerLeft).toBeDefined();
+
+    render(<>{headerLeft?.()}</>);
+    fireEvent.press(screen.getByLabelText('Back to ingredient photos'));
+
+    expect(screen.getByText('Photos')).toBeTruthy();
+    expect(mockReplace).toHaveBeenCalledWith('/');
   });
 
   it('shows an error when no ingredients are extracted', async () => {
