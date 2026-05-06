@@ -45,7 +45,9 @@ describe('useWebDropZone', () => {
     const { result } = renderHook(() =>
       useWebDropZone({ containerRef: { current: el }, addImageFromUri: jest.fn(), imageCount: 0 }),
     );
-    act(() => { el.dispatchEvent(new Event('dragenter')); });
+    act(() => {
+      el.dispatchEvent(new Event('dragenter'));
+    });
     expect(result.current.isDragging).toBe(true);
   });
 
@@ -54,8 +56,12 @@ describe('useWebDropZone', () => {
     const { result } = renderHook(() =>
       useWebDropZone({ containerRef: { current: el }, addImageFromUri: jest.fn(), imageCount: 0 }),
     );
-    act(() => { el.dispatchEvent(new Event('dragenter')); });
-    act(() => { el.dispatchEvent(createDragLeaveEvent(null)); });
+    act(() => {
+      el.dispatchEvent(new Event('dragenter'));
+    });
+    act(() => {
+      el.dispatchEvent(createDragLeaveEvent(null));
+    });
     expect(result.current.isDragging).toBe(false);
   });
 
@@ -66,8 +72,12 @@ describe('useWebDropZone', () => {
     const { result } = renderHook(() =>
       useWebDropZone({ containerRef: { current: el }, addImageFromUri: jest.fn(), imageCount: 0 }),
     );
-    act(() => { el.dispatchEvent(new Event('dragenter')); });
-    act(() => { el.dispatchEvent(createDragLeaveEvent(child)); });
+    act(() => {
+      el.dispatchEvent(new Event('dragenter'));
+    });
+    act(() => {
+      el.dispatchEvent(createDragLeaveEvent(child));
+    });
     expect(result.current.isDragging).toBe(true);
   });
 
@@ -81,7 +91,9 @@ describe('useWebDropZone', () => {
       new File([''], 'photo1.jpg', { type: 'image/jpeg' }),
       new File([''], 'photo2.png', { type: 'image/png' }),
     ];
-    await act(async () => { el.dispatchEvent(createDropEvent(files)); });
+    await act(async () => {
+      el.dispatchEvent(createDropEvent(files));
+    });
     expect(addImageFromUri).toHaveBeenCalledTimes(2);
     expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:test-uri');
   });
@@ -96,7 +108,9 @@ describe('useWebDropZone', () => {
       new File([''], 'doc.pdf', { type: 'application/pdf' }),
       new File([''], 'photo.jpg', { type: 'image/jpeg' }),
     ];
-    await act(async () => { el.dispatchEvent(createDropEvent(files)); });
+    await act(async () => {
+      el.dispatchEvent(createDropEvent(files));
+    });
     expect(addImageFromUri).toHaveBeenCalledTimes(1);
   });
 
@@ -110,7 +124,9 @@ describe('useWebDropZone', () => {
       new File([''], 'a.jpg', { type: 'image/jpeg' }),
       new File([''], 'b.jpg', { type: 'image/jpeg' }),
     ];
-    await act(async () => { el.dispatchEvent(createDropEvent(files)); });
+    await act(async () => {
+      el.dispatchEvent(createDropEvent(files));
+    });
     expect(addImageFromUri).toHaveBeenCalledTimes(1);
   });
 
@@ -123,9 +139,13 @@ describe('useWebDropZone', () => {
         imageCount: 0,
       }),
     );
-    act(() => { el.dispatchEvent(new Event('dragenter')); });
+    act(() => {
+      el.dispatchEvent(new Event('dragenter'));
+    });
     expect(result.current.isDragging).toBe(true);
-    await act(async () => { el.dispatchEvent(createDropEvent([])); });
+    await act(async () => {
+      el.dispatchEvent(createDropEvent([]));
+    });
     expect(result.current.isDragging).toBe(false);
   });
 

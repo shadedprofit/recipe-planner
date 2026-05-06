@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -18,15 +18,30 @@ import { MAX_IMAGES, useImageSelection } from '../src/hooks/useImageSelection';
 import { useRecipeStore } from '../src/store/recipeStore';
 import { WebCameraCapture } from '../src/components/WebCameraCapture';
 import { useResponsiveLayout } from '../src/hooks/useResponsiveLayout';
+import { useWebDropZone } from '../src/hooks/useWebDropZone';
 
 export default function CaptureScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const layout = useResponsiveLayout();
   const [isWebCameraOpen, setIsWebCameraOpen] = useState(false);
-  const { images, isLoading, error, addImage, pickFromLibrary, pickFromCamera, removeImage } =
-    useImageSelection();
+  const {
+    images,
+    isLoading,
+    error,
+    addImage,
+    addImageFromUri,
+    pickFromLibrary,
+    pickFromCamera,
+    removeImage,
+  } = useImageSelection();
   const setSelectedImages = useRecipeStore((state) => state.setSelectedImages);
+  const uploadContainerRef = useRef<View>(null);
+  const { isDragging } = useWebDropZone({
+    containerRef: uploadContainerRef,
+    addImageFromUri,
+    imageCount: images.length,
+  });
 
   const atLimit = images.length >= MAX_IMAGES;
   const controlsDisabled = atLimit || isLoading;
@@ -135,7 +150,14 @@ export default function CaptureScreen() {
             </Pressable>
           </View>
 
-          <View style={[styles.photoPanel, layout.isWide && styles.photoPanelWide]}>
+          <View
+            ref={uploadContainerRef}
+            style={[
+              styles.photoPanel,
+              layout.isWide && styles.photoPanelWide,
+              Platform.OS === 'web' && isDragging && styles.photoPanelDragging,
+            ]}
+          >
             {images.length > 0 ? (
               <FlatList
                 key={gridColumns}
@@ -173,6 +195,11 @@ export default function CaptureScreen() {
                   Use a counter shot, pantry haul, or a few close-ups. Clearer photos produce better
                   ideas.
                 </Text>
+                {Platform.OS === 'web' && (
+                  <Text style={[styles.dropLabel, isDragging && styles.dropLabelActive]}>
+                    {isDragging ? 'Release to add' : 'Drop photos here'}
+                  </Text>
+                )}
               </View>
             )}
           </View>
@@ -419,6 +446,19 @@ const styles = StyleSheet.create({
     marginTop: tokens.spacing.xs,
     textAlign: 'center',
     maxWidth: 420,
+  },
+  photoPanelDragging: {
+    borderColor: tokens.colors.primary,
+    backgroundColor: tokens.colors.primaryMuted,
+  },
+  dropLabel: {
+    color: tokens.colors.textMuted,
+    fontSize: tokens.fontSize.sm,
+    fontWeight: '600',
+    marginTop: tokens.spacing.sm,
+  },
+  dropLabelActive: {
+    color: tokens.colors.primary,
   },
   pressed: {
     opacity: 0.7,
