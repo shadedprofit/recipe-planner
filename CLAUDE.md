@@ -46,8 +46,9 @@ Implemented:
 - Expo Router capture, recipe list, and recipe detail flows.
 - Mobile recipe detail falls back to server fetch by id on cold start.
 - Husky hooks: `pre-commit` runs lint, and `pre-push` runs unit tests.
-
-Still planned: CI and live Railway deployment.
+- GitHub Actions CI on every push/PR; dev frontend deployed to GitHub Pages
+  and backend deployed to Railway on push to `main`. See `docs/DEPLOYMENT.md`
+  for required secrets (`DEV_API_URL`, `RAILWAY_TOKEN`, `RAILWAY_SERVICE`).
 
 ## Commands
 

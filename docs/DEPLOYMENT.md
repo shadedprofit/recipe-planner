@@ -1,9 +1,11 @@
 # Deployment
 
-The recommended take-home deployment is:
+The recommended deployment topology:
 
-- Vercel for the Expo Web frontend.
-- Railway for the Express backend and persistent SQLite volume.
+- **GitHub Actions** — CI on every push/PR; dev frontend to GitHub Pages +
+  backend to Railway on every push to `main`.
+- **Vercel** — production frontend (Expo Web static build).
+- **Railway** — Express backend and persistent SQLite volume.
 
 This keeps the browser app on a static host while the API runs as a normal
 container with writable storage for `better-sqlite3`.
@@ -11,6 +13,43 @@ container with writable storage for `better-sqlite3`.
 Use Node 22 or newer for both services. The repository `package.json` declares
 that engine requirement; if Vercel asks for an explicit setting, choose Node
 22.x or newer in Project Settings.
+
+## CI/CD via GitHub Actions
+
+Two workflow files live in `.github/workflows/`:
+
+**`ci.yml`** — runs on every push and pull request:
+- `npm ci`
+- `npm run lint`
+- `npm run typecheck`
+- `npm run format:check`
+- `npm test`
+
+**`deploy.yml`** — runs on push to `main`, two parallel jobs:
+
+*deploy-frontend* — builds `mobile/dist` with `EXPO_PUBLIC_API_URL` set from
+the `DEV_API_URL` secret, copies `index.html → 404.html` for SPA routing, then
+deploys to GitHub Pages.
+
+*deploy-backend* — installs the Railway CLI and runs `railway up` to redeploy
+the server service.
+
+### Required GitHub Secrets
+
+Set these in **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `DEV_API_URL` | Dev backend URL (e.g. your Railway service public URL) |
+| `RAILWAY_TOKEN` | Railway API token (Account Settings → Tokens) |
+| `RAILWAY_SERVICE` | Railway service name, e.g. `server` |
+
+### Enable GitHub Pages
+
+In **Settings → Pages**, set source to **GitHub Actions**. The `deploy.yml`
+workflow handles the rest.
+
+---
 
 ## Backend On Railway
 

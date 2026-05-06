@@ -46,8 +46,8 @@ Implemented:
 - Expo Router mobile capture, recipe list, and recipe detail flows.
 - Zustand mobile recipe store; only `seenRecipeIds` persists to AsyncStorage.
 - Husky hooks: `pre-commit` runs lint, and `pre-push` runs unit tests.
-
-Still planned: CI and live Railway deployment.
+- GitHub Actions CI on every push/PR; dev frontend to GitHub Pages and backend
+  to Railway on push to `main`. See `docs/DEPLOYMENT.md` for required secrets.
 
 ## Commands
 
