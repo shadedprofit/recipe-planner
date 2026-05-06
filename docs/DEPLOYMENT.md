@@ -61,7 +61,8 @@ npm run build:web -w mobile
 
 ## Local Full-Stack Demo
 
-With `server/.env` populated:
+For a quick local browser demo, populate `server/.env` with a real
+`GEMINI_API_KEY`, then run:
 
 ```bash
 npm run demo
@@ -75,3 +76,9 @@ Open:
 The local Compose web build defaults to
 `EXPO_PUBLIC_API_URL=http://localhost:3001`, because the JavaScript runs in your
 browser and must call the host-exposed backend URL.
+
+Stop the local demo with:
+
+```bash
+npm run demo:down
+```

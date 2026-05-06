@@ -12,8 +12,10 @@ app still runs through Expo Go, an iOS simulator, or an Android emulator.
 
 ## Prerequisites
 
-- Node 22 or newer.
-- Expo-compatible mobile environment.
+- Docker Desktop for the full-stack browser demo.
+- Node 22 or newer for the npm convenience scripts and native Expo workflow.
+- Expo-compatible mobile environment when testing Expo Go, iOS Simulator, or
+  Android Emulator.
 - `GEMINI_API_KEY` for ingredient extraction and recipe generation.
 
 ## Demo Assets
@@ -43,6 +45,9 @@ To use them in the mobile flow:
 
 ## Full-Stack Docker Compose
 
+This is the fastest demo path: Docker Compose builds the Express API and a
+static Expo Web frontend, then serves the product at `http://localhost:8080`.
+
 Create `server/.env` from `server/.env.example` and fill in real keys:
 
 ```bash
@@ -69,6 +74,13 @@ To stop the demo containers:
 
 ```bash
 npm run demo:down
+```
+
+The same commands without npm scripts are:
+
+```bash
+docker compose --env-file server/.env up --build
+docker compose --env-file server/.env down --remove-orphans
 ```
 
 By default:

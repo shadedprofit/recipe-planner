@@ -58,6 +58,44 @@ See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for the recommended Vercel + Railway dep
 
 ## Quick Start
 
+### Docker Demo
+
+Use this path when you want the backend and Expo Web frontend running with the
+fewest local setup steps. You need Docker Desktop, a real `GEMINI_API_KEY`, and
+either Node/npm for the convenience scripts or Docker Compose directly.
+
+Create the server env file and replace the placeholder Gemini key:
+
+```bash
+cp server/.env.example server/.env
+```
+
+Then start the full-stack demo:
+
+```bash
+npm run demo
+```
+
+Open:
+
+- Web app: `http://localhost:8080`
+- Backend health: `http://localhost:3001/health`
+
+Stop the demo containers with:
+
+```bash
+npm run demo:down
+```
+
+The same flow without npm scripts is:
+
+```bash
+docker compose --env-file server/.env up --build
+docker compose --env-file server/.env down --remove-orphans
+```
+
+### Local Development
+
 Use Node 22 or newer, matching the root `package.json` engine requirement.
 
 ```bash
