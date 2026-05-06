@@ -43,9 +43,9 @@ server/   Express backend
 shared/   Zod schemas + types
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the current design rationale, API contract, and implementation status.
-See [DEMO.md](DEMO.md) for a local demo walkthrough with generated sample images and Docker startup.
-See [DEPLOYMENT.md](DEPLOYMENT.md) for the recommended Vercel + Railway deployment path.
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for the current design rationale, API contract, and implementation status.
+See [DEMO.md](docs/DEMO.md) for a local demo walkthrough with generated sample images and Docker startup.
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for the recommended Vercel + Railway deployment path.
 
 ## AI Agent Docs
 
@@ -120,7 +120,7 @@ reads the same file through `npm run demo`, `npm run demo:server`, and
 
 The backend validates request and model output with shared Zod schemas. Gemini providers use structured JSON output; Claude providers use forced tool-use blocks rather than free-text JSON.
 
-For demo/MVP purposes, the recipe data source is model generation cached in SQLite: the app treats generated recipe payloads as a local cache keyed by recipe id so detail screens and future share links can resolve without inventing content. This is a deliberate demo tradeoff, not the intended long-term source of truth. If this project continues past the demo, the planned next step is to commit to a real recipe provider API (for example Spoonacular or Edamam) as the canonical source and demote the LLM to a ranker/adapter. See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
+For demo/MVP purposes, the recipe data source is model generation cached in SQLite: the app treats generated recipe payloads as a local cache keyed by recipe id so detail screens and future share links can resolve without inventing content. This is a deliberate demo tradeoff, not the intended long-term source of truth. If this project continues past the demo, the planned next step is to commit to a real recipe provider API (for example Spoonacular or Edamam) as the canonical source and demote the LLM to a ranker/adapter. See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
 ## Development Workflow
 

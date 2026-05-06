@@ -1,8 +1,8 @@
 # AGENTS.md
 
 Codex uses this file as the repo-level project instruction entrypoint. Keep it
-short enough to load reliably and treat `README.md` plus `ARCHITECTURE.md` as
-the product and architecture source of truth.
+short enough to load reliably and treat `README.md` plus
+`docs/ARCHITECTURE.md` as the product and architecture source of truth.
 
 ## Project
 
@@ -24,7 +24,7 @@ Smart Recipe Planner is an Expo mobile app plus an Express backend:
 - `.claude/`: Claude Code native project extensions such as subagents, commands,
   and shared settings.
 - `README.md`: developer quick-start and current implementation summary.
-- `ARCHITECTURE.md`: current design, data flow, API contracts, and rationale.
+- `docs/ARCHITECTURE.md`: current design, data flow, API contracts, and rationale.
 
 Do not move critical instructions out of `AGENTS.md` unless this file links to
 them clearly and they are safe to load on demand.

@@ -12,4 +12,4 @@ Recommended contents:
 - `settings.local.json`: personal settings; keep this untracked.
 
 Do not put product or architecture truth only in this directory. Use
-`../README.md` and `../ARCHITECTURE.md` for that.
+`../README.md` and `../docs/ARCHITECTURE.md` for that.

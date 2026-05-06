@@ -15,8 +15,8 @@ flow is:
    IDs as exclusions.
 5. User can open a recipe detail screen.
 
-Use `README.md` for quick-start instructions and `ARCHITECTURE.md` for design,
-data flow, and API details.
+Use `README.md` for quick-start instructions and `docs/ARCHITECTURE.md` for
+design, data flow, and API details.
 
 ## AI Docs Layout
 
