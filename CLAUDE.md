@@ -25,11 +25,11 @@ design, data flow, and API details.
   data source notes — auto-loaded when working in `server/`.
 - `mobile/CLAUDE.md`: mobile styling, hooks patterns, accessibility, and
   platform-specific rules — auto-loaded when working in `mobile/`.
-- `.claude/agents/`: Claude Code project subagents. Subagent files use Markdown
-  with YAML frontmatter (`name`, `description`, optional `tools`).
-- `.claude/commands/`: optional project slash commands.
-- `.claude/settings.json`: optional shared Claude Code settings.
-- `.claude/settings.local.json`: personal Claude settings; keep it untracked.
+- `.claude/agents/`: project subagents — create if you need a reusable
+  Claude persona scoped to this repo (Markdown + YAML frontmatter).
+- `.claude/commands/`: project slash commands — create if you add custom
+  commands like `/deploy` or `/gen-demo-images`.
+- `.claude/settings.json`: shared project settings — create if needed.
 - `AGENTS.md`: Codex entrypoint.
 - `.codex/`: optional Codex support docs or skill notes; not a replacement for
   `AGENTS.md`.
