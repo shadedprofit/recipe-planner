@@ -33,15 +33,32 @@ function uniqueIds(ids: string[]): string[] {
   return Array.from(new Set(ids));
 }
 
+function sameImages(a: SelectedImage[], b: SelectedImage[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((image, i) => image.uri === b[i]?.uri && image.base64 === b[i]?.base64)
+  );
+}
+
+function stripImagePayloads(images: SelectedImage[]): SelectedImage[] {
+  return images.map((image) => ({ uri: image.uri, base64: '' }));
+}
+
 export const useRecipeStore = create<RecipeStore>()(
   persist(
     (set) => ({
       ...initialRecipeState,
       setSelectedImages: (images) =>
-        set({
-          selectedImages: images,
-          detectedIngredients: [],
-          recipes: [],
+        set((state) => {
+          if (sameImages(state.selectedImages, images)) {
+            return { selectedImages: images };
+          }
+
+          return {
+            selectedImages: images,
+            detectedIngredients: [],
+            recipes: [],
+          };
         }),
       setDetectedIngredients: (ingredients) => set({ detectedIngredients: ingredients }),
       setRecipes: (recipes) => set({ recipes }),
@@ -60,7 +77,12 @@ export const useRecipeStore = create<RecipeStore>()(
     {
       name: 'recipe-planner-store',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ seenRecipeIds: state.seenRecipeIds }),
+      partialize: (state) => ({
+        selectedImages: stripImagePayloads(state.selectedImages),
+        detectedIngredients: state.detectedIngredients,
+        recipes: state.recipes,
+        seenRecipeIds: state.seenRecipeIds,
+      }),
     },
   ),
 );

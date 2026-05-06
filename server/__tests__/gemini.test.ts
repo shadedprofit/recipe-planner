@@ -44,6 +44,10 @@ afterAll(() => {
 });
 
 describe('extractIngredientsWithGemini', () => {
+  it('defaults ingredient extraction to the higher-accuracy Gemini Flash model', () => {
+    expect(DEFAULT_GEMINI_INGREDIENT_MODEL).toBe('gemini-2.5-flash');
+  });
+
   it('returns parsed ingredients from a valid structured response', async () => {
     mockGenerateContent.mockResolvedValue({
       text: JSON.stringify({
@@ -93,6 +97,43 @@ describe('extractIngredientsWithGemini', () => {
     await extractIngredientsWithGemini(['a']);
 
     expect(mockGenerateContent.mock.calls[0][0].model).toBe('gemini-custom');
+  });
+
+  it('retries transient Gemini availability errors before surfacing extraction failures', async () => {
+    mockGenerateContent
+      .mockRejectedValueOnce(
+        new Error('This model is currently experiencing high demand. status":"UNAVAILABLE"'),
+      )
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          ingredients: [{ name: 'tomato', confidence: 0.91 }],
+        }),
+      });
+
+    const result = await extractIngredientsWithGemini(['base64img']);
+
+    expect(result.ingredients).toEqual([{ name: 'tomato', confidence: 0.91 }]);
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+  });
+
+  it('sanitizes extraction quota errors without retrying', async () => {
+    mockGenerateContent.mockRejectedValue(
+      new Error('{"error":{"code":429,"message":"Quota exceeded","status":"RESOURCE_EXHAUSTED"}}'),
+    );
+
+    await expect(extractIngredientsWithGemini(['base64img'])).rejects.toThrow(
+      'Gemini API quota exceeded',
+    );
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not treat unrelated 429 text as an extraction quota error', async () => {
+    mockGenerateContent.mockRejectedValue(new Error('Recipe note 429 was not helpful'));
+
+    await expect(extractIngredientsWithGemini(['base64img'])).rejects.toThrow(
+      'Recipe note 429 was not helpful',
+    );
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
   });
 
   it('throws when GEMINI_API_KEY is not set', async () => {
@@ -145,6 +186,7 @@ describe('generateRecipesWithGemini', () => {
     const call = mockGenerateContent.mock.calls[0][0];
     expect(call.model).toBe(DEFAULT_GEMINI_RECIPE_MODEL);
     expect(call.config.responseMimeType).toBe('application/json');
+    expect(call.config.maxOutputTokens).toBe(8192);
     expect(call.config.responseJsonSchema).toMatchObject({
       type: 'object',
       properties: { recipes: expect.any(Object) },
@@ -174,6 +216,77 @@ describe('generateRecipesWithGemini', () => {
     const prompt = mockGenerateContent.mock.calls[0][0].contents[0].parts[0].text;
     expect(prompt).toContain('r1');
     expect(prompt).toContain('r2');
+  });
+
+  it('retries once with stricter instructions when recipe JSON is malformed', async () => {
+    mockGenerateContent
+      .mockResolvedValueOnce({ text: '{"recipes":[{"id":"truncated"' })
+      .mockResolvedValueOnce({
+        text: JSON.stringify({ recipes: buildRecipes(5) }),
+      });
+
+    const result = await generateRecipesWithGemini(['egg'], ['old-recipe']);
+
+    expect(result.recipes).toHaveLength(5);
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+    expect(mockGenerateContent.mock.calls[0][0].config.temperature).toBe(0.7);
+    expect(mockGenerateContent.mock.calls[1][0].config.temperature).toBe(0.2);
+    expect(mockGenerateContent.mock.calls[1][0].contents[0].parts[0].text).toContain(
+      'previous response was incomplete or invalid JSON',
+    );
+    expect(mockGenerateContent.mock.calls[1][0].contents[0].parts[0].text).toContain('old-recipe');
+  });
+
+  it('throws the malformed recipe error after both retry attempts fail', async () => {
+    mockGenerateContent.mockResolvedValue({ text: '{"recipes":[{"id":"truncated"' });
+
+    await expect(generateRecipesWithGemini(['egg'], [])).rejects.toThrow(
+      'Gemini returned malformed data for generate_recipes',
+    );
+    expect(mockGenerateContent).toHaveBeenCalledTimes(3);
+  });
+
+  it('retries transient Gemini availability errors before surfacing them', async () => {
+    mockGenerateContent
+      .mockRejectedValueOnce(
+        new Error('This model is currently experiencing high demand. status":"UNAVAILABLE"'),
+      )
+      .mockResolvedValueOnce({ text: JSON.stringify({ recipes: buildRecipes(5) }) });
+
+    const result = await generateRecipesWithGemini(['egg'], []);
+
+    expect(result.recipes).toHaveLength(5);
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+    expect(mockGenerateContent.mock.calls[1][0].config.temperature).toBe(0.2);
+  });
+
+  it('sanitizes recipe quota errors without retrying', async () => {
+    mockGenerateContent.mockRejectedValue(
+      new Error('{"error":{"code":429,"message":"Quota exceeded","status":"RESOURCE_EXHAUSTED"}}'),
+    );
+
+    await expect(generateRecipesWithGemini(['egg'], [])).rejects.toThrow(
+      'Gemini API quota exceeded',
+    );
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not treat unrelated 429 text as a recipe quota error', async () => {
+    mockGenerateContent.mockRejectedValue(new Error('Recipe note 429 was not helpful'));
+
+    await expect(generateRecipesWithGemini(['egg'], [])).rejects.toThrow(
+      'Recipe note 429 was not helpful',
+    );
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry non-transient Gemini errors', async () => {
+    mockGenerateContent.mockRejectedValue(new Error('GEMINI_API_KEY is invalid'));
+
+    await expect(generateRecipesWithGemini(['egg'], [])).rejects.toThrow(
+      'GEMINI_API_KEY is invalid',
+    );
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
   });
 
   it('throws when GEMINI_API_KEY is not set', async () => {

@@ -68,7 +68,8 @@ npm run demo
 
 That script runs `docker compose --env-file server/.env up --build`. If you
 prefer exporting environment variables yourself, `docker compose up --build`
-also works.
+also works; the server service also reads `server/.env` directly so API keys
+are still available when Compose is launched without the npm script.
 
 To stop the demo containers:
 
@@ -89,8 +90,9 @@ By default:
 - Backend: `http://localhost:3001`
 
 The browser app is built with `EXPO_PUBLIC_API_URL=http://localhost:3001` unless
-you override it before running Compose. If you set `PORT` in `server/.env`,
-Compose maps that same host and container port. Check the backend with:
+you override it before running Compose. When using `npm run demo`, if you set
+`PORT` in `server/.env`, Compose maps that same host and container port. Check
+the backend with:
 
 ```bash
 curl http://localhost:3001/health
@@ -152,7 +154,9 @@ npm run web -w mobile
 
 ## Current Limitations
 
-- The default demo depends on live Gemini API calls.
+- The default demo depends on live Gemini API calls. Free-tier Gemini quota can
+  be exhausted during repeated demos; the app surfaces this as a friendly quota
+  message rather than raw provider JSON.
 - Recipe generation is cached model output for the demo, not a permanent recipe
   provider database.
 - The local Docker web build is configured for browser access through

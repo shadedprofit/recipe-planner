@@ -3,13 +3,13 @@ services:
     build:
       context: .
       dockerfile: server/Dockerfile
+    env_file:
+      - server/.env
     environment:
       INGREDIENT_EXTRACTION_PROVIDER: ${INGREDIENT_EXTRACTION_PROVIDER:-gemini}
       RECIPE_GENERATION_PROVIDER: ${RECIPE_GENERATION_PROVIDER:-gemini}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_INGREDIENT_MODEL: ${GEMINI_INGREDIENT_MODEL:-gemini-2.5-flash}
-      GEMINI_RECIPE_MODEL: ${GEMINI_RECIPE_MODEL:-gemini-2.5-flash}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_RECIPE_MODEL: ${GEMINI_RECIPE_MODEL:-gemini-2.5-flash-lite}
       PORT: ${PORT:-3001}
       RECIPE_DB_PATH: /data/recipes.db
     ports:

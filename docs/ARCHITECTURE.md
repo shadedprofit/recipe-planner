@@ -63,7 +63,7 @@ Current recipe generation flow:
 5. Server dispatches image extraction through `server/src/services/ingredientExtraction.ts`.
 6. The default Gemini provider sends all image blocks in one structured-output request; the Claude fallback sends all image blocks in one user message and forces the `extract_ingredients` tool.
 7. Server validates the provider response with `ExtractIngredientsResponseSchema`.
-8. Mobile sends ingredient names plus `excludeRecipeIds` to `POST /api/recipes/generate`.
+8. Mobile sends ingredient names plus `excludeRecipeIds` to `POST /api/recipes/generate`. Refreshes reuse the already detected ingredient list for the selected photos, so they do not re-run image extraction unless no ingredients have been detected yet.
 9. Server calls the configured recipe generation provider and validates exactly five recipes with unique IDs.
 10. Mobile appends returned recipe IDs to persisted `seenRecipeIds`.
 11. Server upserts each generated recipe into the SQLite `recipes` table.
@@ -102,9 +102,19 @@ Server and mobile should import contracts from `recipe-planner-shared`, not from
 
 `server/src/services/ingredientExtraction.ts` selects the image extraction provider from `INGREDIENT_EXTRACTION_PROVIDER`, defaulting to `gemini`.
 
-`server/src/services/gemini.ts` is the only file that imports `@google/genai`. It uses `GEMINI_API_KEY`, defaults to `gemini-2.5-flash`, and validates structured JSON output with `ExtractIngredientsResponseSchema`.
+`server/src/services/gemini.ts` is the only file that imports `@google/genai`. It uses `GEMINI_API_KEY`, defaults ingredient extraction to `gemini-2.5-flash` and recipe generation to `gemini-2.5-flash-lite`, and validates structured JSON output with shared Zod schemas.
 
 `server/src/services/recipeGeneration.ts` selects the recipe generation provider from `RECIPE_GENERATION_PROVIDER`, defaulting to `gemini`.
+
+Gemini extraction and recipe generation requests use structured JSON output. If
+Gemini returns a transient availability error such as `UNAVAILABLE`, the server
+retries before surfacing the error. Recipe generation uses an 8192-token limit
+and also retries malformed JSON or schema-invalid recipe payloads with lower
+temperature and stricter "complete JSON only" instructions.
+
+Gemini quota failures such as `RESOURCE_EXHAUSTED` are not retried. The server
+normalizes them into a `429 PROVIDER_QUOTA_EXCEEDED` response so the mobile app
+can show a concise quota message instead of raw provider JSON.
 
 `server/src/services/claude.ts` is the only file that imports `@anthropic-ai/sdk`. Claude supports optional recipe generation and legacy image extraction when configured.
 

@@ -133,7 +133,7 @@ Server-side model keys stay in `server/.env`:
 - `RECIPE_GENERATION_PROVIDER=gemini` uses Gemini for recipe generation.
 - `GEMINI_API_KEY` is required for Gemini extraction and Gemini recipe generation.
 - `GEMINI_INGREDIENT_MODEL` optionally overrides the default `gemini-2.5-flash` extraction model.
-- `GEMINI_RECIPE_MODEL` optionally overrides the default `gemini-2.5-flash` recipe model.
+- `GEMINI_RECIPE_MODEL` optionally overrides the default `gemini-2.5-flash-lite` recipe model.
 - `ANTHROPIC_API_KEY` is only required when `RECIPE_GENERATION_PROVIDER=claude` or `INGREDIENT_EXTRACTION_PROVIDER=claude`.
 
 The server entrypoint loads `server/.env` automatically for local

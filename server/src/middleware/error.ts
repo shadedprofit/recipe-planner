@@ -11,6 +11,10 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
   if (err instanceof Error) {
+    if (err.name === 'GeminiQuotaExceededError') {
+      res.status(429).json({ error: err.message, code: 'PROVIDER_QUOTA_EXCEEDED' });
+      return;
+    }
     const message = process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message;
     res.status(500).json({ error: message });
     return;

@@ -55,6 +55,20 @@ describe('recipeStore', () => {
     expect(useRecipeStore.getState().recipes).toEqual([]);
   });
 
+  it('keeps generated state when setting the same selected images again', () => {
+    const image = { uri: 'file://photo.jpg', base64: 'base64' };
+    const recipe = sampleRecipe('existing');
+
+    useRecipeStore.getState().setSelectedImages([image]);
+    useRecipeStore.getState().setDetectedIngredients([sampleIngredient]);
+    useRecipeStore.getState().setRecipes([recipe]);
+    useRecipeStore.getState().setSelectedImages([{ ...image }]);
+
+    expect(useRecipeStore.getState().selectedImages).toEqual([image]);
+    expect(useRecipeStore.getState().detectedIngredients).toEqual([sampleIngredient]);
+    expect(useRecipeStore.getState().recipes).toEqual([recipe]);
+  });
+
   it('stores detected ingredients and recipes', () => {
     const recipes = [
       sampleRecipe('r1'),
@@ -69,6 +83,28 @@ describe('recipeStore', () => {
 
     expect(useRecipeStore.getState().detectedIngredients).toEqual([sampleIngredient]);
     expect(useRecipeStore.getState().recipes).toEqual(recipes);
+  });
+
+  it('persists the current recipe session for browser refresh recovery without image payloads', () => {
+    const selectedImages = [{ uri: 'file://photo.jpg', base64: 'x'.repeat(250_000) }];
+    const recipes = [sampleRecipe('r1')];
+
+    useRecipeStore.getState().setSelectedImages(selectedImages);
+    useRecipeStore.getState().setDetectedIngredients([sampleIngredient]);
+    useRecipeStore.getState().setRecipes(recipes);
+    useRecipeStore.getState().addSeenRecipeIds(['r1']);
+
+    const persisted = mockStorage.get('recipe-planner-store');
+    expect(persisted).toBeTruthy();
+    expect(JSON.parse(persisted ?? '{}')).toMatchObject({
+      state: {
+        selectedImages: [{ uri: 'file://photo.jpg', base64: '' }],
+        detectedIngredients: [sampleIngredient],
+        recipes,
+        seenRecipeIds: ['r1'],
+      },
+    });
+    expect(persisted).not.toContain(selectedImages[0].base64);
   });
 
   it('deduplicates seen recipe ids while preserving insertion order', () => {
