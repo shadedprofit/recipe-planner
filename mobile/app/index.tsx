@@ -202,6 +202,11 @@ export default function CaptureScreen() {
                 )}
               </View>
             )}
+            {Platform.OS === 'web' && isDragging && images.length > 0 && !atLimit && (
+              <Text style={[styles.dropLabel, styles.dropLabelActive, styles.dropLabelGrid]}>
+                Release to add
+              </Text>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -459,6 +464,10 @@ const styles = StyleSheet.create({
   },
   dropLabelActive: {
     color: tokens.colors.primary,
+  },
+  dropLabelGrid: {
+    textAlign: 'center',
+    paddingVertical: tokens.spacing.sm,
   },
   pressed: {
     opacity: 0.7,
