@@ -45,6 +45,7 @@ coverage/
 .cache/
 *.tgz
 codex-handoff.md
+.superpowers/
 
 # Personal AI-tool settings
 .claude/settings.local.json
