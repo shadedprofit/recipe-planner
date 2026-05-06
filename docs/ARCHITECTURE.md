@@ -17,11 +17,11 @@ Implemented:
 - Configurable ingredient image extraction, defaulting to Gemini with Claude as a fallback provider.
 - Configurable recipe generation, defaulting to Gemini with Claude as an optional provider.
 - Structured model output and Zod validation for provider responses.
-- Mobile capture screen that can select camera/library images, resize/compress them, and keep base64 data ready for upload.
+- Mobile capture screen that can select camera/library images, resize/compress them, keep base64 data ready for upload, and adapt from phone layouts to wider web/tablet layouts.
 - Mobile API client for extraction and generation endpoints.
 - Mobile recipe store that keeps selected images, detected ingredients, generated recipes, and persisted seen recipe IDs.
-- Mobile recipe list screen that extracts ingredients, generates exactly five recipes, refreshes with dedup support, and stores the latest recipes.
-- Mobile recipe detail screen that reads the selected recipe from the store, falls back to fetching it from the server by id, and renders title, description, time, servings, tags, ingredients, and steps. Shows loading, error, and unavailable states.
+- Mobile recipe list screen that extracts ingredients, generates exactly five recipes, refreshes with dedup support, stores the latest recipes, and presents a responsive ingredient context rail on wide screens.
+- Mobile recipe detail screen that reads the selected recipe from the store, falls back to fetching it from the server by id, and renders title, description, time, servings, tags, ingredients, and steps in a responsive detail layout. Shows loading, error, and unavailable states.
 - Server-side SQLite recipe persistence: every generated recipe is upserted into a `recipes` table keyed by id, so recipe ids stay resolvable across sessions and devices.
 - `GET /api/recipes/:id` endpoint that reads from the SQLite store.
 - Expo Web export and static hosting configuration for a public frontend link.
@@ -150,6 +150,21 @@ The mobile app uses Expo Router:
 - `mobile/app/recipes.tsx`: recipe generation and list screen, implemented.
 - `mobile/app/recipes/[id].tsx`: recipe detail screen, implemented.
 
+The mobile UI uses `mobile/src/theme/tokens.ts` for shared color, spacing,
+radius, layout, and shadow tokens. Wide-screen behavior is centralized in
+`mobile/src/hooks/useResponsiveLayout.ts`, and icon controls use
+`lucide-react-native` backed by `react-native-svg`.
+
+### UI Design Direction
+
+The app should feel like a production kitchen utility rather than a demo or
+marketing page. Keep the UI warm, practical, and food-aware, with clear task
+hierarchy and restrained visual polish. Ingredient photos are the visual source
+of truth; do not invent recipe imagery until a real recipe provider supplies
+canonical images. Phone layouts should stay efficient for the capture-to-recipe
+flow, while tablet and Expo Web layouts should use intentional max widths, side
+context, grids, and readable detail panes instead of stretched mobile columns.
+
 The capture screen delegates native image work to `mobile/src/hooks/useImageSelection.ts`.
 
 Current capture behavior:
@@ -159,8 +174,14 @@ Current capture behavior:
 - Supports multiple library image selection up to 10 total images.
 - Resizes selected images to width 1024.
 - Saves JPEG output with `compress: 0.7` and `base64: true`.
-- Displays a stable 3-column thumbnail grid.
+- Displays a stable thumbnail grid that adapts column count on larger screens.
 - Provides accessible remove controls and user-facing error messages.
+- Uses a responsive app shell so the photo actions and selected-image grid feel
+  intentional on phone, tablet, and Expo Web viewports.
+- On Expo Web only: accepts image files dragged from the OS onto the photo
+  panel via HTML5 drag-and-drop events. The panel highlights with a green
+  border and tinted background while dragging. Logic lives in
+  `mobile/src/hooks/useWebDropZone.ts`; mobile native builds are unaffected.
 
 The recipe list screen delegates network calls to `mobile/src/api/client.ts` and state to `mobile/src/store/recipeStore.ts`.
 
@@ -178,6 +199,8 @@ Current recipe list behavior:
 - Calls ingredient extraction before recipe generation.
 - Sends `seenRecipeIds` as `excludeRecipeIds` for refresh deduplication.
 - Stores returned recipes and appends their IDs to history after successful generation.
+- Shows selected photos and detected ingredients as context, with a side rail on
+  wider screens.
 - Shows explicit empty, loading, and error states.
 - Confirms destructive history clearing with `Alert`.
 

@@ -11,11 +11,11 @@ Implemented:
 - Express backend with health, ingredient extraction, and recipe generation endpoints.
 - Configurable ingredient image extraction, defaulting to Gemini with Claude as a fallback provider.
 - Configurable recipe generation, defaulting to Gemini with Claude as an optional provider.
-- Expo Router mobile scaffold with a capture screen for camera/library image selection, thumbnail removal, resizing, and base64 conversion. The web build uses browser camera capture for the Camera button.
+- Expo Router mobile scaffold with a responsive capture screen for camera/library image selection, thumbnail removal, resizing, and base64 conversion. The web build uses browser camera capture for the Camera button and supports drag-and-drop image upload.
 - Mobile API client for extraction/generation requests.
 - Mobile recipe store for selected images, detected ingredients, generated recipes, and seen recipe IDs. Only seen recipe IDs are persisted to AsyncStorage.
-- Recipe list screen that extracts ingredients from selected photos, generates recipes, refreshes with dedup support, and links to recipe details.
-- Recipe detail screen that renders the selected recipe (title, description, time, servings, tags, ingredients, steps), falls back to fetching by id from the server on cold start, and renders explicit loading/error/unavailable states.
+- Responsive recipe list screen that extracts ingredients from selected photos, generates recipes, refreshes with dedup support, shows ingredient context, and links to recipe details.
+- Responsive recipe detail screen that renders the selected recipe (title, description, time, servings, tags, ingredients, steps), falls back to fetching by id from the server on cold start, and renders explicit loading/error/unavailable states.
 - SQLite-backed recipe cache (`better-sqlite3`) so generated recipe ids resolve across sessions via `GET /api/recipes/:id`.
 - Expo Web export for deploying the app to a public link.
 - Demo guide, generated demo ingredient images, and full-stack Docker Compose setup.
@@ -29,7 +29,7 @@ Not implemented yet:
 
 ## Stack
 
-- **Mobile**: Expo SDK 52, TypeScript, Expo Router, React Native, `expo-image-picker`, `expo-image-manipulator`
+- **Mobile**: Expo SDK 52, TypeScript, Expo Router, React Native, `expo-image-picker`, `expo-image-manipulator`, `lucide-react-native`, `react-native-svg`
 - **Mobile state**: Zustand + AsyncStorage for seen recipe history, TanStack Query for request orchestration
 - **Backend**: Node + Express (TypeScript), Gemini image extraction and recipe generation by default, optional Claude fallback providers, structured model output, SQLite recipe cache via `better-sqlite3`
 - **Shared**: Zod schemas consumed by both apps
