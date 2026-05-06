@@ -135,6 +135,8 @@ export default function CaptureScreen() {
                 styles.proceedBtn,
                 !canProceed && styles.proceedBtnDisabled,
                 pressed && canProceed && styles.pressed,
+                Platform.OS === 'web' &&
+                  ({ cursor: canProceed ? 'pointer' : 'not-allowed' } as object),
               ]}
               onPress={() => {
                 setSelectedImages(images);

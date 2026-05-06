@@ -22,6 +22,10 @@ RUN npm run build:web -w mobile
 FROM nginx:1.27-alpine AS runtime
 
 COPY mobile/nginx.conf /etc/nginx/conf.d/default.conf
+COPY mobile/nginx-entrypoint.sh /nginx-entrypoint.sh
 COPY --from=build /app/mobile/dist /usr/share/nginx/html
 
+RUN chmod +x /nginx-entrypoint.sh
+
 EXPOSE 80
+ENTRYPOINT ["/nginx-entrypoint.sh"]
