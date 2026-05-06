@@ -327,4 +327,42 @@ describe('useImageSelection', () => {
       expect(result.current.error).toBeNull();
     });
   });
+
+  describe('addImageFromUri', () => {
+    it('processes a URI and adds the resized image', async () => {
+      const { result } = renderHook(() => useImageSelection());
+
+      await act(() => result.current.addImageFromUri('file://photo1.jpg'));
+
+      expect(ImageManipulator.manipulate).toHaveBeenCalledWith('file://photo1.jpg');
+      expect(result.current.images).toHaveLength(1);
+      expect(result.current.images[0].base64).toBe('base64data');
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    it('does nothing when already at MAX_IMAGES', async () => {
+      const { result } = renderHook(() => useImageSelection());
+
+      act(() => {
+        Array.from({ length: MAX_IMAGES }, (_, i) =>
+          result.current.addImage({ uri: `data:image/jpeg;base64,${i}`, base64: `${i}` }),
+        );
+      });
+
+      await act(() => result.current.addImageFromUri('file://overflow.jpg'));
+
+      expect(result.current.images).toHaveLength(MAX_IMAGES);
+      expect(ImageManipulator.manipulate).not.toHaveBeenCalled();
+    });
+
+    it('records an error when resize fails', async () => {
+      mockSaveAsync.mockRejectedValue(new Error('resize failed'));
+      const { result } = renderHook(() => useImageSelection());
+
+      await act(() => result.current.addImageFromUri('file://bad.jpg'));
+
+      expect(result.current.error).toBe('Could not process that photo. Please try another image.');
+      expect(result.current.images).toHaveLength(0);
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
@@ -12,6 +12,7 @@ export interface UseImageSelectionReturn {
   isLoading: boolean;
   error: string | null;
   addImage: (image: SelectedImage) => void;
+  addImageFromUri: (uri: string) => Promise<void>;
   pickFromLibrary: () => Promise<void>;
   pickFromCamera: () => Promise<void>;
   removeImage: (uri: string) => void;
@@ -41,7 +42,7 @@ export function useImageSelection(): UseImageSelectionReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const addImage = (image: SelectedImage) => {
+  const addImage = useCallback((image: SelectedImage) => {
     setImages((prev) => {
       if (prev.length >= MAX_IMAGES) {
         setError(MAX_IMAGES_ERROR);
@@ -50,7 +51,24 @@ export function useImageSelection(): UseImageSelectionReturn {
       setError(null);
       return [...prev, image].slice(0, MAX_IMAGES);
     });
-  };
+  }, []);
+
+  const addImageFromUri = useCallback(
+    async (uri: string) => {
+      if (images.length >= MAX_IMAGES) return;
+      setError(null);
+      try {
+        setIsLoading(true);
+        const processed = await resizeToBase64(uri);
+        addImage(processed);
+      } catch {
+        setError(PROCESSING_ERROR);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [images.length, addImage],
+  );
 
   const pickFromLibrary = async () => {
     setError(null);
@@ -126,6 +144,7 @@ export function useImageSelection(): UseImageSelectionReturn {
     isLoading,
     error,
     addImage,
+    addImageFromUri,
     pickFromLibrary,
     pickFromCamera,
     removeImage,
