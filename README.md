@@ -19,13 +19,14 @@ Implemented:
 - SQLite-backed recipe cache (`better-sqlite3`) so generated recipe ids resolve across sessions via `GET /api/recipes/:id`.
 - Expo Web export for deploying the app to a public link.
 - Demo guide, generated demo ingredient images, and full-stack Docker Compose setup.
-- Vercel frontend deployment config.
+- GitHub Actions CI plus dev deployment workflow for GitHub Pages and Railway.
+- Vercel production frontend deployment config, limited to the `production` branch.
 - Husky hooks: `pre-commit` runs lint, and `pre-push` runs all workspace unit tests before a push.
 - Unit tests and coverage gates for implemented server, shared, mobile hook, API client, store, and recipe screen behavior.
 
 Not implemented yet:
 
-- CI and live Railway deployment wiring.
+- A canonical third-party recipe provider integration for production recipe data.
 
 ## Stack
 
@@ -33,7 +34,7 @@ Not implemented yet:
 - **Mobile state**: Zustand + AsyncStorage for seen recipe history, TanStack Query for request orchestration
 - **Backend**: Node + Express (TypeScript), Gemini image extraction and recipe generation by default, optional Claude fallback providers, structured model output, SQLite recipe cache via `better-sqlite3`
 - **Shared**: Zod schemas consumed by both apps
-- **Planned hosting**: Vercel Expo Web frontend plus Railway backend with a persistent SQLite volume
+- **Hosting**: GitHub Pages dev frontend plus Vercel production frontend, both calling a Railway backend with a persistent SQLite volume
 
 ## Repo Layout
 
@@ -147,7 +148,21 @@ reads the same file through `npm run demo`, `npm run demo:server`, and
 - Android emulator: `http://10.0.2.2:3001`
 - Physical device: `http://<your-computer-lan-ip>:3001`
 - Local Docker web demo: `http://localhost:3001`
-- Vercel web deployment: the public Railway backend URL
+- GitHub Pages dev and Vercel production deployments: the public Railway backend URL
+
+## Deployment
+
+The deployment flow is split by stage:
+
+- `main` runs CI and deploys the dev web frontend to GitHub Pages plus the
+  backend to Railway.
+- `production` is the Vercel production branch. Vercel deployments are disabled
+  for other branches in `vercel.json` to conserve Hobby usage.
+
+To finish hosted setup, configure GitHub Actions secrets (`DEV_API_URL`,
+`RAILWAY_TOKEN`, `RAILWAY_SERVICE`), enable GitHub Pages with GitHub Actions as
+the source, create the `production` branch, and set Vercel's production branch
+to `production`. See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full checklist.
 
 ## API Summary
 

@@ -3,6 +3,7 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,6 +28,15 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Check frontend deployment config
+        run: |
+          if [ -z "$DEV_API_URL" ]; then
+            echo "::error::Missing DEV_API_URL secret. Set it to the public Railway backend URL in Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+        env:
+          DEV_API_URL: ${{ secrets.DEV_API_URL }}
+
       - run: HUSKY=0 npm ci
 
       - name: Build web frontend
@@ -39,6 +49,8 @@ jobs:
       - run: cp mobile/dist/index.html mobile/dist/404.html
 
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -55,7 +67,27 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Deploy to Railway
-        run: railway up --service=${{ secrets.RAILWAY_SERVICE }} --detach
+      - name: Check Railway deployment config
+        run: |
+          missing=0
+
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::Missing RAILWAY_TOKEN secret. Create a Railway API token and add it in Settings -> Secrets and variables -> Actions."
+            missing=1
+          fi
+
+          if [ -z "$RAILWAY_SERVICE" ]; then
+            echo "::error::Missing RAILWAY_SERVICE secret. Set it to the Railway service name, for example: server."
+            missing=1
+          fi
+
+          exit "$missing"
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE: ${{ secrets.RAILWAY_SERVICE }}
+
+      - name: Deploy to Railway
+        run: railway up --service="$RAILWAY_SERVICE" --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE: ${{ secrets.RAILWAY_SERVICE }}
