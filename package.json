@@ -35,10 +35,10 @@
     "typescript-eslint": "^8.20.0"
   },
   "overrides": {
+    "react-server-dom-webpack": "^19.0.2",
     "schema-utils": {
       "ajv": "^8.17.1"
-    },
-    "react-server-dom-webpack": "^19.0.2"
+    }
   },
   "engines": {
     "node": ">=22"
