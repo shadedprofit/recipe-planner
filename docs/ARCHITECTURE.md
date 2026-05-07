@@ -1,5 +1,29 @@
 # Architecture
 
+```mermaid
+graph TD
+    subgraph Pipeline [Source & Deployment]
+        A[GitHub Monorepo] -->|Triggers| B(GitHub Actions CI/CD)
+    end
+    
+    subgraph Front [Frontend - Vercel]
+        C[Expo / React UI] --> D[Zustand: Client State]
+        C --> E[TanStack Query: Server State]
+    end
+    
+    subgraph Back [Backend - Railway]
+        F[Node.js Server] --> G[LLM Integration]
+    end
+
+    B -->|Deploys| Front
+    B -->|Deploys| Back
+    E <-->|JSON over HTTP| F
+    
+    classDef default fill:#f9fafb,stroke:#d1d5db,stroke-width:2px,color:#111827;
+    classDef highlight fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1d4ed8;
+    class A,B,C,F highlight;
+```
+
 Smart Recipe Planner is a three-workspace TypeScript app:
 
 - `mobile/`: Expo mobile client.
