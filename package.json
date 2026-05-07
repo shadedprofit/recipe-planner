@@ -37,7 +37,8 @@
   "overrides": {
     "schema-utils": {
       "ajv": "^8.17.1"
-    }
+    },
+    "react-server-dom-webpack": "^19.0.2"
   },
   "engines": {
     "node": ">=22"
