@@ -43,5 +43,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "merge-options": "^3.0.4"
   }
 }
