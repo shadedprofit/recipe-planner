@@ -41,5 +41,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "react-server-dom-webpack": "^19.2.6"
   }
 }
