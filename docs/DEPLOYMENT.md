@@ -19,6 +19,7 @@ that engine requirement; if Vercel asks for an explicit setting, choose Node
 Two workflow files live in `.github/workflows/`:
 
 **`ci.yml`** — runs on every push and pull request:
+
 - `npm ci`
 - `npm run lint`
 - `npm run typecheck`
@@ -27,22 +28,22 @@ Two workflow files live in `.github/workflows/`:
 
 **`deploy.yml`** — runs on push to `main`, two parallel jobs:
 
-*deploy-frontend* — builds `mobile/dist` with `EXPO_PUBLIC_API_URL` set from
+_deploy-frontend_ — builds `mobile/dist` with `EXPO_PUBLIC_API_URL` set from
 the `DEV_API_URL` secret, copies `index.html → 404.html` for SPA routing, then
 deploys to GitHub Pages.
 
-*deploy-backend* — installs the Railway CLI and runs `railway up` to redeploy
+_deploy-backend_ — installs the Railway CLI and runs `railway up` to redeploy
 the server service.
 
 ### Required GitHub Secrets
 
 Set these in **Settings → Secrets and variables → Actions**:
 
-| Secret | Value |
-|---|---|
-| `DEV_API_URL` | Dev backend URL (e.g. your Railway service public URL) |
-| `RAILWAY_TOKEN` | Railway API token (Account Settings → Tokens) |
-| `RAILWAY_SERVICE` | Railway service name, e.g. `server` |
+| Secret            | Value                                                  |
+| ----------------- | ------------------------------------------------------ |
+| `DEV_API_URL`     | Dev backend URL (e.g. your Railway service public URL) |
+| `RAILWAY_TOKEN`   | Railway API token (Account Settings → Tokens)          |
+| `RAILWAY_SERVICE` | Railway service name, e.g. `server`                    |
 
 ### Enable GitHub Pages
 
